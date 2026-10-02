@@ -1,58 +1,58 @@
 [
  {
   "id": "base",
-  "label": "Proposal (3 steel discs/side, polycarbonate hood, 16:24 belt)",
+  "label": "Proposal",
   "group": "Design",
   "folder": "base",
-  "describe": "shooter/variants.py: v4_final + {}"
+  "describe": "Hogbacks + 3 steel discs per side, polycarbonate hood, 16:24 belt."
  },
  {
   "id": "discs0",
-  "label": "No steel discs (Hogbacks only)",
+  "label": "No steel discs",
   "group": "Flywheel mass",
   "folder": "discs0",
-  "describe": "shooter/variants.py: v4_final + {'discs_per_side': 0}"
+  "describe": "Lighter flywheel: drops more speed per shot, recovers just as fast."
  },
  {
   "id": "discs1",
   "label": "1 steel disc per side",
   "group": "Flywheel mass",
   "folder": "discs1",
-  "describe": "shooter/variants.py: v4_final + {'discs_per_side': 1}"
+  "describe": "Lighter flywheel: 1 steel disc per side."
  },
  {
   "id": "discs2",
   "label": "2 steel discs per side",
   "group": "Flywheel mass",
   "folder": "discs2",
-  "describe": "shooter/variants.py: v4_final + {'discs_per_side': 2}"
+  "describe": "Lighter flywheel: 2 steel discs per side."
  },
  {
   "id": "radius_m4",
-  "label": "Hood arc 4 mm tighter",
+  "label": "Hood 4 mm closer to the wheel",
   "group": "Hood radius",
   "folder": "radius_m4",
-  "describe": "shooter/variants.py: v4_final + {'design_delta_mm': -4.0}"
+  "describe": "The hood's arc built 4 mm smaller: tighter pinch."
  },
  {
   "id": "radius_p4",
-  "label": "Hood arc 4 mm looser",
+  "label": "Hood 4 mm further from the wheel",
   "group": "Hood radius",
   "folder": "radius_p4",
-  "describe": "shooter/variants.py: v4_final + {'design_delta_mm': 4.0}"
+  "describe": "The hood's arc built 4 mm larger: looser pinch."
  },
  {
   "id": "alu_hood",
-  "label": "Aluminium hood (structure contact law)",
+  "label": "Aluminium hood",
   "group": "Hood material",
   "folder": "alu_hood",
-  "describe": "shooter/variants.py: v4_final + {'hood_material': 'aluminium'}"
+  "describe": "Same hood shape in aluminium: different grip and bounce on the ball."
  },
  {
   "id": "belt_1to1",
-  "label": "24:24 belt (wheel = motor speed)",
+  "label": "24:24 belt (wheel at motor speed)",
   "group": "Belt ratio",
   "folder": "belt_1to1",
-  "describe": "shooter/variants.py: v4_final + {'pulley_pair': 0}"
+  "describe": "Motor and wheel turn at the same speed: less torque to hold the wheel's speed."
  }
 ]

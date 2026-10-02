@@ -11,13 +11,16 @@ launcher. Only the turret is modelled: the intake below it is abstracted (a ball
   - the **angle servo** (goBILDA 2000 Speed, 5:1 sector gear) swings it along that circle to set the exit angle;
   - the **gap servo** (2000 Torque) turns a two-dwell cam that moves the shell between the POLLEN and NECTAR settings.
     At a dwell the pinch load goes through the cam, not the servo.
-- **Entry stage:** the ball comes straight up the turret's bore and waits between two sprung 1 in Stealth rollers that ride
-  on the hood arms. FIRE spins them and they hand the ball into the hood's mouth along the hood's path. The stage
-  swings with the hood, so the ball always enters the pinch the same way at every angle.
+- **Entry:** a ball waits in the hood's mouth between two sprung 1 in Stealth rollers that ride on the hood arms, each
+  turned by a goBILDA Super Speed servo (continuous mode). FIRE spins them and they hand the ball into the pinch the same
+  way at every hood angle. The path from the turret's bore up to the mouth (the intake/transfer) comes later; here the
+  ball simply appears in the mouth.
 - **Turret:** the shooter stands on a printed ring gear (192 T, module 1.25) on an AndyMark am-5039 turntable bearing,
   turned by a pinion from outside later.
 
 ## What is modelled
+- **The same physics as our goBILDA StarterBot model:** the same contact, ball and air laws reproduce that robot's shot
+  (5.40 m/s at 70.6 deg, against 5.48 m/s at 70.4 deg from the real robot's video).
 - **Contact:** the ball-on-rubber pinch law from material numbers (Gent + Hertz + the ball's shell). Bounce and stiffness
   are calibrated to measurements: a POLLEN rebounds 40 cm from 1 m (e = 0.63), and squeezes ~2 mm at 130-220 N.
 - **Motors:** the Yellow Jackets' published stall and free points, with winding resistance, back-EMF and internal friction.
@@ -35,13 +38,13 @@ launcher. Only the turret is modelled: the intake below it is abstracted (a ball
 - The cam/arm stiffness, printed-part density and belt stiffness are estimates. The belt is modelled ~10x softer than a
   real one so the 0.2 ms step stays stable; it rings far faster than a shot either way.
 - NECTAR's bounce and the balls' real masses (nominal 24.9 g / 41.3 g) have not been measured.
-- The intake/transfer below the turret is not modelled.
+- The intake/transfer below the turret is not modelled; the balls appear in the hood's mouth.
 
-## Numbers from the design's own check (fresh seeds, 40 shots per ball at random targets)
+## Numbers from the design's own check (fresh seeds, 20 shots per ball at random targets)
 | | speed error rms / max | angle error rms / max |
 |---|---|---|
-| POLLEN | 0.22 % / 0.62 % | 0.06 deg / 0.15 deg |
-| NECTAR | 0.31 % / 0.94 % | 0.16 deg / 0.48 deg |
+| POLLEN | 0.17 % / 0.39 % | 0.04 deg / 0.11 deg |
+| NECTAR | 0.17 % / 0.28 % | 0.26 deg / 0.55 deg |
 
 ## How this page works
 MuJoCo 3.13 compiled to WebAssembly runs the same model file as our Python bench. The same control code is ported to

@@ -44,7 +44,7 @@ async function boot() {
   buildSliders();
   wireUi();
   app.view = new View($('view'));
-  VIEWS.forEach(([nm], i) => { const b = document.createElement('button'); b.textContent = nm; b.onclick = () => setView(i); $('views').appendChild(b); });
+  VIEWS.forEach(([nm], i) => { const b = document.createElement('button'); b.textContent = nm; b.title = nm === 'FLIGHT' ? 'Camera: zoomed out to follow the ball in flight (key V)' : `Camera: ${nm.toLowerCase()} view of the shooter (key V)`; b.onclick = () => setView(i); $('views').appendChild(b); });
   app.strip = new Strip($('charts'), [
     { label: 'wheel rpm (target grey)', unit: 'rpm', color: '#f48434', fmt: (v) => fmt(v, 0), ref: true, span: 40 },
     { label: 'motor current', unit: 'A', color: '#78beff', fmt: (v) => fmt(v, 2), span: 0.5 },
@@ -54,7 +54,7 @@ async function boot() {
   app.mj = mj; app.sim = new Sim(mj); app.variants = readIndex(idx);
   const groups = [...new Set(app.variants.map((v) => v.group))];
   $('variant').innerHTML = groups.map((g) => {
-    const opts = app.variants.filter((v) => v.group === g).map((v) => `<option value="${v.id}">${v.label}</option>`).join('');
+    const opts = app.variants.filter((v) => v.group === g).map((v) => `<option value="${v.id}" title="${v.describe}">${g ? g + ': ' : ''}${v.label}</option>`).join('');
     return g ? `<optgroup label="${g}">${opts}</optgroup>` : opts;
   }).join('');
   const want = new URLSearchParams(location.search).get('variant') || app.variants[0].id;
@@ -93,6 +93,7 @@ async function loadVariant(id) {
   app._cmdKey = null; apply();
   setView(app.s.view);
   $('vtitle').textContent = (v.group ? v.group + ': ' : '') + v.label;
+  $('vdesc').textContent = v.describe || '';
   $('design').textContent = `${data.manifest.design_file}${Object.keys(data.manifest.overrides || {}).length ? ' + overrides' : ''}`;
   $('status').textContent = `${v.id}: compiled in ${(performance.now() - t0).toFixed(0)} ms, ${data.manifest.counts.ngeom} geoms, ` +
     `timestep ${data.manifest.timestep * 1e3} ms, MuJoCo ${data.manifest.mujoco_version}`;
@@ -153,7 +154,10 @@ function sampleStep(sim) {
   app.strip.push([B.wheelRpm(), B.current, B.v_batt], [B.targetRpm()]);
 }
 
+function hideHint() { const h = $('hint'); if (h && !h.classList.contains('gone')) { h.classList.add('gone'); try { localStorage.setItem('shooterHintSeen', '1'); } catch (e) { /* private mode */ } } }
+
 function onShot(r) {
+  hideHint();
   r.n = app.shots.length + 1;
   app.shots.push(r); app.tracker = null;
   if (!r.jam) app.recov = { shot: r, t: r.t_exit };
@@ -246,6 +250,16 @@ function liveUi() {
   $('footer').textContent = `t ${fmt(app.sim.time, 2)} s   sim ${fmt(app.achieved, 2)}x real time (asked ${fmt(1 / s.slow, 2)}x)   ${app.shooter.balls.length} balls, ${app.manifest.counts.ngeom} geoms`;
 }
 
+const TIPS = {
+  droop: 'How much the flywheel slowed during the shot', recovery: 'Time from the ball leaving until the shooter was ready again',
+  'squeeze tread': 'How far the ball was pressed into the flywheel tread', 'squeeze hood': 'How far the ball was pressed into the hood',
+  'force tread': 'Largest push between ball and flywheel', 'force hood': 'Largest push between ball and hood',
+  contact: 'How long the ball touched the shooter', slip: 'How much slower the ball left than the tread surface (0 = no slip)',
+  spin: 'Ball spin as it left (backspin positive)', energy: 'Kinetic energy of the ball as it left',
+  azimuth: 'Sideways angle of the shot (0 = straight)', 'motor peak': 'Highest flywheel motor current during the shot',
+  'battery min': 'Lowest battery voltage during the shot', 'feeder peak': 'Highest feeder motor current during the shot',
+  'wheel / hood': 'Wheel rpm and hood angle the shot was fired with', 'peak force': 'Largest total contact force on the ball',
+};
 const errClass = (x, good, warn) => (x == null ? '' : Math.abs(x) <= good ? 'good' : Math.abs(x) <= warn ? 'warn' : 'bad');
 
 function renderShot() {
@@ -270,7 +284,7 @@ function renderShot() {
     ['azimuth', `${sgn(r.azimuth, 2)} deg`], ['motor peak', `${fmt(r.motor_current_peak_a, 2)} A`],
     ['battery min', `${fmt(r.battery_min_v, 2)} V`], ['feeder peak', `${fmt(r.feeder_current_peak_a, 2)} A`],
     ['wheel / hood', `${fmt(r.rpm_target, 0)} rpm ${sgn(r.arm_deg, 2)}`], ['peak force', `${fmt(r.peak_force_n, 0)} N`]];
-  g.innerHTML = items.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('');
+  g.innerHTML = items.map(([k, v]) => `<div title="${TIPS[k] || ''}"><span>${k}</span><b>${v}</b></div>`).join('');
 }
 
 function renderLog() {
@@ -353,6 +367,8 @@ function setView(i) {
 
 function wireUi() {
   const s = app.s;
+  try { if (localStorage.getItem('shooterHintSeen')) $('hint').classList.add('gone'); } catch (e) { /* private mode */ }
+  window.addEventListener('pointerdown', hideHint, { once: true });
   document.querySelectorAll('[data-ball]').forEach((b) => { b.onclick = () => { s.ball = b.dataset.ball; app._cmdKey = null; syncUi(); }; });
   document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => { s.mode = b.dataset.mode; syncUi(); }; });
   $('fire').onclick = () => { app.queue++; };
