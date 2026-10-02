@@ -1,0 +1,1104 @@
+{
+ "generator": "BIOBUZZ/web/shooter/tools/export_scene.py",
+ "design_file": "sim/mechanism/shooter/designs/variants/alu_hood.yaml",
+ "overrides": {},
+ "mech_tree": "BIOBUZZ/sim/mechanism",
+ "mujoco_version": "3.13.0",
+ "scene": "scene.xml",
+ "files": {
+  "../../meshes/arm_00.6d7a2e65.stl": "../../meshes/arm_00.6d7a2e65.stl",
+  "../../meshes/arm_01.e4bd501d.stl": "../../meshes/arm_01.e4bd501d.stl",
+  "../../meshes/arm_02.9da9544c.stl": "../../meshes/arm_02.9da9544c.stl",
+  "../../meshes/arm_03.d87c9890.stl": "../../meshes/arm_03.d87c9890.stl",
+  "../../meshes/arm_04.1ad83b70.stl": "../../meshes/arm_04.1ad83b70.stl",
+  "../../meshes/arm_05.27165bfa.stl": "../../meshes/arm_05.27165bfa.stl",
+  "../../meshes/arm_06.601979cd.stl": "../../meshes/arm_06.601979cd.stl",
+  "../../meshes/arm_07.aba90df1.stl": "../../meshes/arm_07.aba90df1.stl",
+  "../../meshes/arm_08.decb0fa8.stl": "../../meshes/arm_08.decb0fa8.stl",
+  "../../meshes/arm_09.c935f9d7.stl": "../../meshes/arm_09.c935f9d7.stl",
+  "../../meshes/arm_10.c19ae0ce.stl": "../../meshes/arm_10.c19ae0ce.stl",
+  "../../meshes/arm_11.b4229b4c.stl": "../../meshes/arm_11.b4229b4c.stl",
+  "../../meshes/cam_12.9ac7fa03.stl": "../../meshes/cam_12.9ac7fa03.stl",
+  "../../meshes/fly_13.720fe841.stl": "../../meshes/fly_13.720fe841.stl",
+  "../../meshes/fly_14.810b07c1.stl": "../../meshes/fly_14.810b07c1.stl",
+  "../../meshes/fly_15.ba2ac59b.stl": "../../meshes/fly_15.ba2ac59b.stl",
+  "../../meshes/fly_16.798170cf.stl": "../../meshes/fly_16.798170cf.stl",
+  "../../meshes/fly_17.554682b6.stl": "../../meshes/fly_17.554682b6.stl",
+  "../../meshes/fly_18.7b558a48.stl": "../../meshes/fly_18.7b558a48.stl",
+  "../../meshes/frame_19.e7b268a3.stl": "../../meshes/frame_19.e7b268a3.stl",
+  "../../meshes/frame_20.9fdff8c6.stl": "../../meshes/frame_20.9fdff8c6.stl",
+  "../../meshes/frame_21.e0e743e0.stl": "../../meshes/frame_21.e0e743e0.stl",
+  "../../meshes/frame_22.f479ff98.stl": "../../meshes/frame_22.f479ff98.stl",
+  "../../meshes/frame_23.930603b7.stl": "../../meshes/frame_23.930603b7.stl",
+  "../../meshes/frame_24.ec2f6227.stl": "../../meshes/frame_24.ec2f6227.stl",
+  "../../meshes/frame_25.d691d431.stl": "../../meshes/frame_25.d691d431.stl",
+  "../../meshes/frame_26.eef73182.stl": "../../meshes/frame_26.eef73182.stl",
+  "../../meshes/frame_27.ab3fd865.stl": "../../meshes/frame_27.ab3fd865.stl",
+  "../../meshes/frame_28.9785aae4.stl": "../../meshes/frame_28.9785aae4.stl",
+  "../../meshes/frame_29.443aca49.stl": "../../meshes/frame_29.443aca49.stl",
+  "../../meshes/frame_30.4275c920.stl": "../../meshes/frame_30.4275c920.stl",
+  "../../meshes/hood_31.0d356b0a.stl": "../../meshes/hood_31.0d356b0a.stl",
+  "../../meshes/hood_32.0ee0f2ee.stl": "../../meshes/hood_32.0ee0f2ee.stl",
+  "../../meshes/hood_33.447e55d2.stl": "../../meshes/hood_33.447e55d2.stl",
+  "../../meshes/hood_34.fb373cf6.stl": "../../meshes/hood_34.fb373cf6.stl",
+  "../../meshes/motor_rotor_35.5c3e6efa.stl": "../../meshes/motor_rotor_35.5c3e6efa.stl",
+  "../../meshes/motor_rotor_36.5568981a.stl": "../../meshes/motor_rotor_36.5568981a.stl",
+  "../../meshes/motor_rotor_37.9e9dfd22.stl": "../../meshes/motor_rotor_37.9e9dfd22.stl",
+  "../../meshes/pinion_38.bb753234.stl": "../../meshes/pinion_38.bb753234.stl"
+ },
+ "timestep": 0.0002,
+ "counts": {
+  "nq": 120,
+  "nv": 104,
+  "nu": 5,
+  "nbody": 28,
+  "ngeom": 165,
+  "nmesh": 39
+ },
+ "bodies": [
+  {
+   "id": 0,
+   "name": "world",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 1,
+   "name": "fly",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 2,
+   "name": "motor_rotor",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 3,
+   "name": "arm",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 4,
+   "name": "hood",
+   "parent": 3,
+   "mocap": -1
+  },
+  {
+   "id": 5,
+   "name": "feeder_l_slide",
+   "parent": 3,
+   "mocap": -1
+  },
+  {
+   "id": 6,
+   "name": "feeder_l",
+   "parent": 5,
+   "mocap": -1
+  },
+  {
+   "id": 7,
+   "name": "feeder_r_slide",
+   "parent": 3,
+   "mocap": -1
+  },
+  {
+   "id": 8,
+   "name": "feeder_r",
+   "parent": 7,
+   "mocap": -1
+  },
+  {
+   "id": 9,
+   "name": "frame",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 10,
+   "name": "pinion",
+   "parent": 0,
+   "mocap": 0
+  },
+  {
+   "id": 11,
+   "name": "cam",
+   "parent": 0,
+   "mocap": 1
+  },
+  {
+   "id": 12,
+   "name": "ball0",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 13,
+   "name": "ball1",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 14,
+   "name": "ball2",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 15,
+   "name": "ball3",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 16,
+   "name": "ball4",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 17,
+   "name": "ball5",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 18,
+   "name": "ball6",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 19,
+   "name": "ball7",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 20,
+   "name": "ball8",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 21,
+   "name": "ball9",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 22,
+   "name": "ball10",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 23,
+   "name": "ball11",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 24,
+   "name": "ball12",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 25,
+   "name": "ball13",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 26,
+   "name": "ball14",
+   "parent": 0,
+   "mocap": -1
+  },
+  {
+   "id": 27,
+   "name": "ball15",
+   "parent": 0,
+   "mocap": -1
+  }
+ ],
+ "joints": [
+  {
+   "id": 0,
+   "name": "fly",
+   "type": "hinge",
+   "body": 1,
+   "qposadr": 0,
+   "dofadr": 0
+  },
+  {
+   "id": 1,
+   "name": "motor",
+   "type": "hinge",
+   "body": 2,
+   "qposadr": 1,
+   "dofadr": 1
+  },
+  {
+   "id": 2,
+   "name": "arm",
+   "type": "hinge",
+   "body": 3,
+   "qposadr": 2,
+   "dofadr": 2
+  },
+  {
+   "id": 3,
+   "name": "gap",
+   "type": "slide",
+   "body": 4,
+   "qposadr": 3,
+   "dofadr": 3
+  },
+  {
+   "id": 4,
+   "name": "feeder_l_slide",
+   "type": "slide",
+   "body": 5,
+   "qposadr": 4,
+   "dofadr": 4
+  },
+  {
+   "id": 5,
+   "name": "feeder_l",
+   "type": "hinge",
+   "body": 6,
+   "qposadr": 5,
+   "dofadr": 5
+  },
+  {
+   "id": 6,
+   "name": "feeder_r_slide",
+   "type": "slide",
+   "body": 7,
+   "qposadr": 6,
+   "dofadr": 6
+  },
+  {
+   "id": 7,
+   "name": "feeder_r",
+   "type": "hinge",
+   "body": 8,
+   "qposadr": 7,
+   "dofadr": 7
+  },
+  {
+   "id": 8,
+   "name": "ball0_free",
+   "type": "free",
+   "body": 12,
+   "qposadr": 8,
+   "dofadr": 8
+  },
+  {
+   "id": 9,
+   "name": "ball1_free",
+   "type": "free",
+   "body": 13,
+   "qposadr": 15,
+   "dofadr": 14
+  },
+  {
+   "id": 10,
+   "name": "ball2_free",
+   "type": "free",
+   "body": 14,
+   "qposadr": 22,
+   "dofadr": 20
+  },
+  {
+   "id": 11,
+   "name": "ball3_free",
+   "type": "free",
+   "body": 15,
+   "qposadr": 29,
+   "dofadr": 26
+  },
+  {
+   "id": 12,
+   "name": "ball4_free",
+   "type": "free",
+   "body": 16,
+   "qposadr": 36,
+   "dofadr": 32
+  },
+  {
+   "id": 13,
+   "name": "ball5_free",
+   "type": "free",
+   "body": 17,
+   "qposadr": 43,
+   "dofadr": 38
+  },
+  {
+   "id": 14,
+   "name": "ball6_free",
+   "type": "free",
+   "body": 18,
+   "qposadr": 50,
+   "dofadr": 44
+  },
+  {
+   "id": 15,
+   "name": "ball7_free",
+   "type": "free",
+   "body": 19,
+   "qposadr": 57,
+   "dofadr": 50
+  },
+  {
+   "id": 16,
+   "name": "ball8_free",
+   "type": "free",
+   "body": 20,
+   "qposadr": 64,
+   "dofadr": 56
+  },
+  {
+   "id": 17,
+   "name": "ball9_free",
+   "type": "free",
+   "body": 21,
+   "qposadr": 71,
+   "dofadr": 62
+  },
+  {
+   "id": 18,
+   "name": "ball10_free",
+   "type": "free",
+   "body": 22,
+   "qposadr": 78,
+   "dofadr": 68
+  },
+  {
+   "id": 19,
+   "name": "ball11_free",
+   "type": "free",
+   "body": 23,
+   "qposadr": 85,
+   "dofadr": 74
+  },
+  {
+   "id": 20,
+   "name": "ball12_free",
+   "type": "free",
+   "body": 24,
+   "qposadr": 92,
+   "dofadr": 80
+  },
+  {
+   "id": 21,
+   "name": "ball13_free",
+   "type": "free",
+   "body": 25,
+   "qposadr": 99,
+   "dofadr": 86
+  },
+  {
+   "id": 22,
+   "name": "ball14_free",
+   "type": "free",
+   "body": 26,
+   "qposadr": 106,
+   "dofadr": 92
+  },
+  {
+   "id": 23,
+   "name": "ball15_free",
+   "type": "free",
+   "body": 27,
+   "qposadr": 113,
+   "dofadr": 98
+  }
+ ],
+ "actuators": [
+  {
+   "id": 0,
+   "name": "fly_motor",
+   "joint": "motor",
+   "ctrlrange": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": 1,
+   "name": "angle_servo",
+   "joint": "arm",
+   "ctrlrange": [
+    -0.3216,
+    0.3216
+   ]
+  },
+  {
+   "id": 2,
+   "name": "gap_servo",
+   "joint": "gap",
+   "ctrlrange": [
+    -0.018,
+    0.018
+   ]
+  },
+  {
+   "id": 3,
+   "name": "feeder_l_motor",
+   "joint": "feeder_l",
+   "ctrlrange": [
+    0.0,
+    0.0
+   ]
+  },
+  {
+   "id": 4,
+   "name": "feeder_r_motor",
+   "joint": "feeder_r",
+   "ctrlrange": [
+    0.0,
+    0.0
+   ]
+  }
+ ],
+ "materials": {
+  "floor": [
+   1.0,
+   1.0,
+   1.0,
+   1.0
+  ],
+  "alu": [
+   0.78,
+   0.8,
+   0.83,
+   1.0
+  ],
+  "alu_black": [
+   0.1,
+   0.1,
+   0.11,
+   1.0
+  ],
+  "print_black": [
+   0.13,
+   0.13,
+   0.14,
+   1.0
+  ],
+  "print_orange": [
+   0.95,
+   0.45,
+   0.1,
+   1.0
+  ],
+  "pc_clear": [
+   0.75,
+   0.85,
+   0.95,
+   0.35
+  ],
+  "steel": [
+   0.62,
+   0.63,
+   0.65,
+   1.0
+  ],
+  "rubber": [
+   0.06,
+   0.06,
+   0.06,
+   1.0
+  ],
+  "tpu_blue": [
+   0.15,
+   0.35,
+   0.85,
+   1.0
+  ],
+  "polycord": [
+   0.85,
+   0.2,
+   0.15,
+   1.0
+  ]
+ },
+ "balls": [
+  {
+   "name": "ball0",
+   "type": "pollen",
+   "body": 12,
+   "geom": 149,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 8,
+   "dofadr": 8
+  },
+  {
+   "name": "ball1",
+   "type": "pollen",
+   "body": 13,
+   "geom": 150,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 15,
+   "dofadr": 14
+  },
+  {
+   "name": "ball2",
+   "type": "pollen",
+   "body": 14,
+   "geom": 151,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 22,
+   "dofadr": 20
+  },
+  {
+   "name": "ball3",
+   "type": "pollen",
+   "body": 15,
+   "geom": 152,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 29,
+   "dofadr": 26
+  },
+  {
+   "name": "ball4",
+   "type": "pollen",
+   "body": 16,
+   "geom": 153,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 36,
+   "dofadr": 32
+  },
+  {
+   "name": "ball5",
+   "type": "pollen",
+   "body": 17,
+   "geom": 154,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 43,
+   "dofadr": 38
+  },
+  {
+   "name": "ball6",
+   "type": "pollen",
+   "body": 18,
+   "geom": 155,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 50,
+   "dofadr": 44
+  },
+  {
+   "name": "ball7",
+   "type": "pollen",
+   "body": 19,
+   "geom": 156,
+   "radius": 0.03555,
+   "mass": 0.0249,
+   "qposadr": 57,
+   "dofadr": 50
+  },
+  {
+   "name": "ball8",
+   "type": "nectar",
+   "body": 20,
+   "geom": 157,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 64,
+   "dofadr": 56
+  },
+  {
+   "name": "ball9",
+   "type": "nectar",
+   "body": 21,
+   "geom": 158,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 71,
+   "dofadr": 62
+  },
+  {
+   "name": "ball10",
+   "type": "nectar",
+   "body": 22,
+   "geom": 159,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 78,
+   "dofadr": 68
+  },
+  {
+   "name": "ball11",
+   "type": "nectar",
+   "body": 23,
+   "geom": 160,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 85,
+   "dofadr": 74
+  },
+  {
+   "name": "ball12",
+   "type": "nectar",
+   "body": 24,
+   "geom": 161,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 92,
+   "dofadr": 80
+  },
+  {
+   "name": "ball13",
+   "type": "nectar",
+   "body": 25,
+   "geom": 162,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 99,
+   "dofadr": 86
+  },
+  {
+   "name": "ball14",
+   "type": "nectar",
+   "body": 26,
+   "geom": 163,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 106,
+   "dofadr": 92
+  },
+  {
+   "name": "ball15",
+   "type": "nectar",
+   "body": 27,
+   "geom": 164,
+   "radius": 0.046,
+   "mass": 0.0413,
+   "qposadr": 113,
+   "dofadr": 98
+  }
+ ],
+ "ball_mass": {
+  "pollen": 0.0249,
+  "nectar": 0.0413
+ },
+ "geom_sets": {
+  "rig": [
+   "fly_w0",
+   "fly_w1",
+   "hood_s0",
+   "hood_c0_l",
+   "hood_c0_r",
+   "hood_s1",
+   "hood_c1_l",
+   "hood_c1_r",
+   "hood_s2",
+   "hood_c2_l",
+   "hood_c2_r",
+   "hood_s3",
+   "hood_c3_l",
+   "hood_c3_r",
+   "hood_s4",
+   "hood_c4_l",
+   "hood_c4_r",
+   "hood_s5",
+   "hood_c5_l",
+   "hood_c5_r",
+   "hood_s6",
+   "hood_c6_l",
+   "hood_c6_r",
+   "hood_s7",
+   "hood_c7_l",
+   "hood_c7_r",
+   "hood_s8",
+   "hood_c8_l",
+   "hood_c8_r",
+   "hood_s9",
+   "hood_c9_l",
+   "hood_c9_r",
+   "hood_s10",
+   "hood_c10_l",
+   "hood_c10_r",
+   "hood_s11",
+   "hood_c11_l",
+   "hood_c11_r",
+   "hood_s12",
+   "hood_c12_l",
+   "hood_c12_r",
+   "hood_s13",
+   "hood_c13_l",
+   "hood_c13_r",
+   "hood_s14",
+   "hood_c14_l",
+   "hood_c14_r",
+   "hood_s15",
+   "hood_c15_l",
+   "hood_c15_r",
+   "hood_s16",
+   "hood_c16_l",
+   "hood_c16_r",
+   "hood_s17",
+   "hood_c17_l",
+   "hood_c17_r",
+   "hood_s18",
+   "hood_c18_l",
+   "hood_c18_r",
+   "hood_s19",
+   "hood_c19_l",
+   "hood_c19_r",
+   "hood_s20",
+   "hood_c20_l",
+   "hood_c20_r",
+   "hood_s21",
+   "hood_c21_l",
+   "hood_c21_r",
+   "hood_s22",
+   "hood_c22_l",
+   "hood_c22_r",
+   "hood_s23",
+   "hood_c23_l",
+   "hood_c23_r",
+   "hood_s24",
+   "hood_c24_l",
+   "hood_c24_r",
+   "hood_s25",
+   "hood_c25_l",
+   "hood_c25_r",
+   "hood_s26",
+   "hood_c26_l",
+   "hood_c26_r",
+   "hood_s27",
+   "hood_c27_l",
+   "hood_c27_r",
+   "hood_s28",
+   "hood_c28_l",
+   "hood_c28_r",
+   "hood_s29",
+   "hood_c29_l",
+   "hood_c29_r",
+   "hood_s30",
+   "hood_c30_l",
+   "hood_c30_r",
+   "hood_s31",
+   "hood_c31_l",
+   "hood_c31_r",
+   "hood_s32",
+   "hood_s33",
+   "hood_s34",
+   "hood_s35",
+   "hood_s36",
+   "hood_s37",
+   "hood_s38",
+   "hood_s39",
+   "hood_s40",
+   "feeder_l_w",
+   "feeder_r_w"
+  ],
+  "wheel": [
+   "fly_w0",
+   "fly_w1"
+  ],
+  "hood": [
+   "hood_s0",
+   "hood_s1",
+   "hood_s2",
+   "hood_s3",
+   "hood_s4",
+   "hood_s5",
+   "hood_s6",
+   "hood_s7",
+   "hood_s8",
+   "hood_s9",
+   "hood_s10",
+   "hood_s11",
+   "hood_s12",
+   "hood_s13",
+   "hood_s14",
+   "hood_s15",
+   "hood_s16",
+   "hood_s17",
+   "hood_s18",
+   "hood_s19",
+   "hood_s20",
+   "hood_s21",
+   "hood_s22",
+   "hood_s23",
+   "hood_s24",
+   "hood_s25",
+   "hood_s26",
+   "hood_s27",
+   "hood_s28",
+   "hood_s29",
+   "hood_s30",
+   "hood_s31",
+   "hood_s32",
+   "hood_s33",
+   "hood_s34",
+   "hood_s35",
+   "hood_s36",
+   "hood_s37",
+   "hood_s38",
+   "hood_s39",
+   "hood_s40"
+  ],
+  "feeder": [
+   "feeder_l_w",
+   "feeder_r_w"
+  ]
+ },
+ "air": {
+  "rho": 1.204,
+  "blunt": 0.225,
+  "magnus": 0.15,
+  "law": "F = (magnus/2) rho (4/3 pi r^3) (w x v) - rho blunt pi r^2 |v| v  (models/air.py)"
+ },
+ "controller": {
+  "hub": {
+   "sample_s": 0.01,
+   "ring": 5
+  },
+  "wheels": [
+   {
+    "name": "fly",
+    "joint": "fly",
+    "actuator": "fly_motor",
+    "spin": -1,
+    "tpr": 28.0,
+    "P": 331.6499,
+    "I": 0.0,
+    "F": 11.7025,
+    "target_rpm": 3000.0,
+    "radius": 0.048,
+    "free_rad": 418.8790204786391,
+    "stall": 0.21599999999999997,
+    "encoder_joint": "motor",
+    "ratio": 0.6666666666666666
+   }
+  ],
+  "motor": {
+   "joint": "motor",
+   "actuator": "fly_motor",
+   "spin": -1,
+   "R": 1.3043478260869565,
+   "Kt": 0.016089385474860336,
+   "Ke": 0.018579609660945174,
+   "T_fric": 0.004022346368715084,
+   "battery_v": 12.6,
+   "battery_r": 0.08,
+   "ratio": 0.6666666666666666,
+   "belt_r": [
+    0.012732395447351628,
+    0.01909859317102744
+   ],
+   "belt_k": 300000.0,
+   "belt_c": 15.0,
+   "why": "5203-2402-0001: 6000 rpm free / 0.25 A, 0.1440 N.m / 9.2 A at 12 V (vendor)"
+  },
+  "feeder": {
+   "R": 1.3043478260869565,
+   "Kt": 0.016089385474860336,
+   "Ke": 0.018579609660945174,
+   "T_fric": 0.004022346368715084,
+   "on_arm": true,
+   "u": 0.8005,
+   "n": [
+    0.467777639129287,
+    0.8838461859003696
+   ],
+   "d": [
+    -0.8838461859003696,
+    0.467777639129287
+   ],
+   "wheel_r": 0.0127,
+   "rollers": [
+    {
+     "name": "l",
+     "sx": -1,
+     "slide": "feeder_l_slide",
+     "joint": "feeder_l",
+     "actuator": "feeder_l_motor",
+     "spin": -1.0
+    },
+    {
+     "name": "r",
+     "sx": 1,
+     "slide": "feeder_r_slide",
+     "joint": "feeder_r",
+     "actuator": "feeder_r_motor",
+     "spin": 1.0
+    }
+   ],
+   "stage": {
+    "pollen": {
+     "S": [
+      -0.04334745579109345,
+      -0.08190319558830775
+     ],
+     "d": [
+      -0.8838461859003696,
+      0.467777639129287
+     ],
+     "q": 0.0
+    },
+    "nectar": {
+     "S": [
+      -0.04674214378428138,
+      -0.08831731585426529
+     ],
+     "d": [
+      -0.8838461859003696,
+      0.467777639129287
+     ],
+     "q": 0.010450000000000001
+    }
+   },
+   "frame": "arm",
+   "why": "5203-2402-0001 driving two 25 mm Hogbacks (counter-rotating, one gear pair)"
+  },
+  "servos": {
+   "angle": {
+    "actuator": "angle_servo",
+    "joint": "arm",
+    "speed": 2.3271056693257726,
+    "why": "2000-0025-0003 0.912 N.m, 667 deg/s at 6 V, x5 sector",
+    "deadband": 0.0020943951023931952
+   },
+   "gap": {
+    "actuator": "gap_servo",
+    "joint": "gap",
+    "speed": 0.07314033333333339,
+    "why": "2000-0025-0002 turns a two-dwell cam 90 deg in 0.30 s; dwell stiffness 1e6 N/m ESTIMATE",
+    "deadband": 0.0
+   }
+  },
+  "inject": "stage",
+  "park": {
+   "x": 3.0,
+   "dx": 0.12,
+   "z": 0.05
+  },
+  "shot": {
+   "take_s": 0.6,
+   "max_s": 1.0,
+   "min_speed": 2.0,
+   "gap_s": 0.02
+  },
+  "spin_up_limit_s": 6.0,
+  "inject_jitter": {
+   "pos": [
+    0.003,
+    0.001,
+    0.001
+   ],
+   "speed": 0.1
+  }
+ },
+ "design": {
+  "wheel_count": 2,
+  "wheel_gap_mm": 6.0,
+  "discs_per_side": 3,
+  "motor_count": 1,
+  "pulley_motor": 16,
+  "pulley_fly": 24,
+  "belt_mm": 275,
+  "belt_k": 300000.0,
+  "belt_c": 15.0,
+  "battery_v": 12.6,
+  "battery_r": 0.08,
+  "bearing_friction": 0.002,
+  "tpr": 28,
+  "gate_tol": 0.0151,
+  "squeeze_pollen_mm": 2.505,
+  "squeeze_nectar_mm": 1.4629,
+  "wrap_deg": 61.9487,
+  "flare_deg": 20.9022,
+  "flare_mm": 17.0246,
+  "lip_relief_mm": 1.405,
+  "lip_relief_deg": 14.6088,
+  "slide_frac": 0.5539,
+  "lip_mid_deg": 159.2088,
+  "angle_travel_deg": 18.4262,
+  "hood_width_mm": 104.0,
+  "hood_thickness_mm": 3.0,
+  "servo_deadband_deg": 0.6,
+  "angle_ratio": 5.0,
+  "gap_cam_mm": 18.0,
+  "inject_speed": 2.5,
+  "stage_frac": 1.0024,
+  "feeder_u": 0.8005,
+  "entry_deg": 215.0,
+  "entry_alpha_deg": 0.0,
+  "entry_margin_deg": 6.0,
+  "feed_gap_mm": 50.0,
+  "feed_tilt_deg": 15.0,
+  "feeder_preload_n": 28.4882,
+  "feeder_k": 600.0,
+  "feeder_squeeze_mm": 2.2872,
+  "wrap_margin_deg": 2.0,
+  "feed_offset_mm": 46.74,
+  "height_m": 0.3,
+  "pulley_pair": 1,
+  "design_squeeze_pollen_mm": 2.505,
+  "design_squeeze_nectar_mm": 1.4629,
+  "R_WHEEL": 0.048,
+  "D_POLLEN": 0.0711,
+  "D_NECTAR": 0.092,
+  "hood_radius": 0.12756605000000001,
+  "offset": {
+   "pollen": -0.01097105000000001,
+   "nectar": 0.01097105000000001
+  },
+  "mid_axis": [
+   -0.9722794574473071,
+   -0.2338218480509683
+  ],
+  "flags": {
+   "wheel": "3626-0014-0096",
+   "motor": "5203-2402-0001",
+   "hood_material": "aluminium",
+   "build_dir": "build_alu_hood",
+   "angle_servo": "2000-0025-0003",
+   "gap_servo": "2000-0025-0002",
+   "feeder": true,
+   "feeder_on_arm": true,
+   "feeder_wheel": "am-4590_blue",
+   "feeder_motor": "5203-2402-0001",
+   "feed_wrap": false
+  }
+ },
+ "mocaps": {
+  "pinion": {
+   "origin": [
+    0.0,
+    0.08863269777109872,
+    0.01562833599002373
+   ]
+  },
+  "cam": {
+   "origin": [
+    0.0,
+    -0.16289288069029528,
+    -0.039173834339099864
+   ]
+  }
+ },
+ "variant": {
+  "id": "alu_hood",
+  "label": "Aluminium hood (structure contact law)",
+  "group": "Hood material",
+  "describe": "shooter/variants.py: v4_final + {'hood_material': 'aluminium'}"
+ },
+ "calibration": "calibration.json"
+}

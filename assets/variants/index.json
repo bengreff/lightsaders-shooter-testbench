@@ -1,0 +1,58 @@
+[
+ {
+  "id": "base",
+  "label": "Proposal (3 steel discs/side, polycarbonate hood, 16:24 belt)",
+  "group": "Design",
+  "folder": "base",
+  "describe": "shooter/variants.py: v4_final + {}"
+ },
+ {
+  "id": "discs0",
+  "label": "No steel discs (Hogbacks only)",
+  "group": "Flywheel mass",
+  "folder": "discs0",
+  "describe": "shooter/variants.py: v4_final + {'discs_per_side': 0}"
+ },
+ {
+  "id": "discs1",
+  "label": "1 steel disc per side",
+  "group": "Flywheel mass",
+  "folder": "discs1",
+  "describe": "shooter/variants.py: v4_final + {'discs_per_side': 1}"
+ },
+ {
+  "id": "discs2",
+  "label": "2 steel discs per side",
+  "group": "Flywheel mass",
+  "folder": "discs2",
+  "describe": "shooter/variants.py: v4_final + {'discs_per_side': 2}"
+ },
+ {
+  "id": "radius_m4",
+  "label": "Hood arc 4 mm tighter",
+  "group": "Hood radius",
+  "folder": "radius_m4",
+  "describe": "shooter/variants.py: v4_final + {'design_delta_mm': -4.0}"
+ },
+ {
+  "id": "radius_p4",
+  "label": "Hood arc 4 mm looser",
+  "group": "Hood radius",
+  "folder": "radius_p4",
+  "describe": "shooter/variants.py: v4_final + {'design_delta_mm': 4.0}"
+ },
+ {
+  "id": "alu_hood",
+  "label": "Aluminium hood (structure contact law)",
+  "group": "Hood material",
+  "folder": "alu_hood",
+  "describe": "shooter/variants.py: v4_final + {'hood_material': 'aluminium'}"
+ },
+ {
+  "id": "belt_1to1",
+  "label": "24:24 belt (wheel = motor speed)",
+  "group": "Belt ratio",
+  "folder": "belt_1to1",
+  "describe": "shooter/variants.py: v4_final + {'pulley_pair': 0}"
+ }
+]
