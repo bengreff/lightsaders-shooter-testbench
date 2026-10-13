@@ -83,39 +83,55 @@ export function bicubicInterp(arms, rpms, Z) {
 
 // ------------------------------------------------------------------ the map
 export class CalMap {
-  /** cal: calibration.json (from the exporter: grid + spline_v/spline_e per ball) or a browser-measured grid. */
+  /** cal: calibration.json (from the exporter: per ball the splines - per squeeze level when it has `levels` - and the
+   *  grid) or a browser-measured grid. Squeeze (calibrate.py Map): linear between levels, clamped; setSqueeze(bt, mm)
+   *  selects the squeeze predict/solve use (default: the design's). */
   constructor(cal, mode) {
     this.cal = cal; this.T = +cal.travel;
     this.rpms = cal.rpms || RPMS;
     this.mode = mode || (cal.pollen.spline_v ? 'spline' : 'interp');
-    this.f = {};
+    this.f = {}; this.sel = {}; this.default_sq = {};
     for (const bt of ['pollen', 'nectar']) {
-      const c = cal[bt], g = c.grid;
-      this.f[bt] = this.mode === 'spline'
-        ? [bispline(c.spline_v), bispline(c.spline_e)]
-        : [bicubicInterp(g.arms, g.rpms, g.v), bicubicInterp(g.arms, g.rpms, g.e)];
+      const c = cal[bt];
+      const L = this.mode === 'spline' && c.levels ? c.levels : [{ sq: c.default_sq ?? null, spline_v: c.spline_v, spline_e: c.spline_e, grid: c.grid }];
+      this.f[bt] = L.map((l) => [l.sq, this.mode === 'spline' ? bispline(l.spline_v) : bicubicInterp(l.grid.arms, l.grid.rpms, l.grid.v),
+        this.mode === 'spline' ? bispline(l.spline_e) : bicubicInterp(l.grid.arms, l.grid.rpms, l.grid.e)]).sort((a, b) => a[0] - b[0]);
+      this.default_sq[bt] = c.default_sq ?? null; this.sel[bt] = this.default_sq[bt];
     }
   }
 
-  predict(bt, arm, rpm) { const [fv, fe] = this.f[bt]; return [fv(arm, rpm), fe(arm, rpm)]; }
+  /** [min, max] calibrated squeeze for a ball (null when the map has one level). */
+  sqRange(bt) { const q = this.f[bt].map((t) => t[0]).filter((x) => x !== null); return q.length > 1 ? [Math.min(...q), Math.max(...q)] : null; }
+  setSqueeze(bt, sq) { this.sel[bt] = sq; }
 
-  /** (arm deg, rpm, ok) giving (speed, elev): dense 81 x 113 grid, then 8 Newton steps (calibrate.py Map.solve). */
-  solve(bt, speed, elev) {
+  predict(bt, arm, rpm, sq) {
+    const S = this.f[bt];
+    if (S.length === 1) return [S[0][1](arm, rpm), S[0][2](arm, rpm)];
+    let q = sq ?? this.sel[bt] ?? this.default_sq[bt];
+    q = Math.min(Math.max(q, S[0][0]), S[S.length - 1][0]);
+    let k = 0;
+    while (k < S.length - 2 && q >= S[k + 1][0]) k++;      // numpy searchsorted(side='right') - 1, clamped
+    const w = (q - S[k][0]) / (S[k + 1][0] - S[k][0]);
+    return [(1 - w) * S[k][1](arm, rpm) + w * S[k + 1][1](arm, rpm), (1 - w) * S[k][2](arm, rpm) + w * S[k + 1][2](arm, rpm)];
+  }
+
+  /** (arm deg, rpm, ok) giving (speed, elev) at the selected squeeze: dense 81 x 113 grid, then 8 Newton steps. */
+  solve(bt, speed, elev, sq) {
     const T = this.T, R0 = this.rpms[0], R1 = this.rpms[this.rpms.length - 1];
     let best = Infinity, x0 = 0, x1 = R0;
-    for (let i = 0; i < 113; i++) {                      // meshgrid(linspace(-T,T,81), linspace(R0,R1,113)): rows = rpm
+    for (let i = 0; i < 113; i++) {
       const r = R0 + (R1 - R0) * i / 112;
       for (let j = 0; j < 81; j++) {
         const a = -T + 2 * T * j / 80;
-        const [v, e] = this.predict(bt, a, r);
+        const [v, e] = this.predict(bt, a, r, sq);
         const err = ((v - speed) / speed * 100) ** 2 + (e - elev) ** 2;
         if (err < best) { best = err; x0 = a; x1 = r; }
       }
     }
     const h = [0.05, 2.0];
     for (let it = 0; it < 8; it++) {
-      const [v0, e0] = this.predict(bt, x0, x1);
-      const [va, ea] = this.predict(bt, x0 + h[0], x1), [vr, er] = this.predict(bt, x0, x1 + h[1]);
+      const [v0, e0] = this.predict(bt, x0, x1, sq);
+      const [va, ea] = this.predict(bt, x0 + h[0], x1, sq), [vr, er] = this.predict(bt, x0, x1 + h[1], sq);
       const J00 = (va - v0) / h[0], J01 = (vr - v0) / h[1], J10 = (ea - e0) / h[0], J11 = (er - e0) / h[1];
       const det = J00 * J11 - J01 * J10;
       if (!det || !isFinite(det)) break;
@@ -123,7 +139,7 @@ export class CalMap {
       x0 -= (J11 * b0 - J01 * b1) / det; x1 -= (-J10 * b0 + J00 * b1) / det;
       x0 = Math.min(Math.max(x0, -T), T); x1 = Math.min(Math.max(x1, R0), R1);
     }
-    const [v0, e0] = this.predict(bt, x0, x1);
+    const [v0, e0] = this.predict(bt, x0, x1, sq);
     return [x0, x1, Math.abs(v0 / speed - 1) < 0.005 && Math.abs(e0 - elev) < 0.25];
   }
 }

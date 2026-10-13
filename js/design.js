@@ -7,6 +7,13 @@ export function ballD(D, bt) { return bt === 'pollen' ? D.D_POLLEN : D.D_NECTAR;
 
 /** Radial shell offset (m) along the slide radial that gives squeeze_mm (default: the design's setting for bt). */
 export function offset(D, bt, squeeze_mm) {
+  if (D.flags && D.flags.sprung_hood) return D.offset[bt];   // design.py offset: a passive sprung hood rests at its stop
+  if (D.flags && D.flags.v9) {        // v9 (design.py offset): the level slide from the reference geometry
+    const base = bt === 'nectar' ? D.slide_mm / 1000 : 0;
+    const ref = D[`sq_ref_${bt}_mm`] ?? D[`squeeze_${bt}_mm`];
+    const sq = squeeze_mm === undefined || squeeze_mm === null ? D[`squeeze_${bt}_mm`] : squeeze_mm;
+    return base + (ref - sq) / 1000;
+  }
   const s = (squeeze_mm === undefined || squeeze_mm === null ? D[`squeeze_${bt}_mm`] : squeeze_mm) / 1000;
   return (D.R_WHEEL + ballD(D, bt) - s) - D.hood_radius;
 }
@@ -34,8 +41,18 @@ export function mouth(D, bt, arm_deg = 0, off = null) {
  *  clear tread and shell at every hood angle, moving straight up. */
 export function feedStart(D, bt) {
   const r = ballD(D, bt) / 2;
+  if (D.flags && D.flags.bore_feed) {          // v8: in the bore, on its back wall, just below the turret plate's top
+    let y = -D.feed_offset_mm / 1000 - D.bore_d_mm / 2000 + r + 0.0012;
+    if (D.flags.feed_front) y = -D.feed_offset_mm / 1000 + D.bore_d_mm / 2000 - r - 0.0012;   // v9: the front wall
+    if (D.flags.bore_play) y = -D.feed_offset_mm / 1000;   // the bore's axis (jitter: anywhere in its free disc)
+    const depth = D.feed_depth_mm !== undefined ? D.feed_depth_mm / 1000 : 0.015 + r;
+    return { pos: [y, -D.plate_below_mm / 1000 - depth], vdir: [0, 1] };
+  }
   const rmax = D.hood_radius + (D.flare_mm + D.gap_cam_mm + D.hood_thickness_mm) / 1000;
   return { pos: [-D.feed_offset_mm / 1000, -(rmax + r + 0.008)], vdir: [0, 1] };
 }
+
+/** Half the free play (m) of a ball across the bore (design.py bore_play). */
+export function borePlay(D, bt) { return Math.max(0, D.bore_d_mm / 2000 - ballD(D, bt) / 2 - 0.0012); }
 
 export function lipTangentDeg(D, arm_deg) { return D.lip_mid_deg + arm_deg - 90; }

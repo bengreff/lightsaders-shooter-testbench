@@ -12,8 +12,18 @@ import { Hub, Motor } from './hub.js';
 import { Feeder } from './feeder.js';
 import { Air } from './air.js';
 import * as DS from './design.js';
+import { NumpyRNG } from './nprandom.js';
 
 const deg = (r) => r * 180 / Math.PI, rad = (d) => d * Math.PI / 180;
+
+/** bench.py BALL_SPREAD (older exports carry none in manifest.controller.ball_spread): per property (sigma, bound) as
+ *  fractions of the nominal value; a truncated normal per shot. */
+export const BALL_SPREAD = { diameter: [0.0065, 0.02], mass: [0.015, 0.045], stiffness: [0.10, 0.25], cor: [0.02, 0.05] };
+
+/** bench.py trunc_normal: redraw until |x| <= bound. */
+export function truncNormal(r, sigma, bound) {
+  for (;;) { const x = r.normal(0.0, sigma); if (Math.abs(x) <= bound) return x; }
+}
 
 /** Seeded uniform PRNG (mulberry32): the JS jitter is reproducible, but NOT numpy's stream. */
 export function rng(seed) {
@@ -50,22 +60,41 @@ export class Servos {
   }
 }
 
+/** The robot's lift servo (bench.py lift_step): continuous rotation on the 6 V rail through its belt speed-up onto the
+ *  lift wheel; the same straight torque-speed line as the motor, BRAKE when off. */
+export class LiftServo {
+  constructor(spec) { this.L = spec; this.u = 0; this.current = 0; }
+  onLoad(sim) { this.v = sim.vadr(this.L.joint); this.aid = sim.actuatorId(this.L.actuator); }
+  preStep(sim) {
+    const L = this.L, om = sim.qvel[this.v] / L.up, band = 1e-6;
+    const i = (this.u * L.V - L.Ke * om) / L.R; this.current = i;
+    const tq = L.Kt * i - L.T_fric * (om > band ? 1 : om < -band ? -1 : 0);
+    sim.ctrlv[this.aid] = tq / L.up;
+  }
+}
+
 export class Shooter {
-  /** manifest: a variant's manifest.json. opts: {seed, jitter (true: the Python bench's arrival jitter)}. */
+  /** manifest: a variant's manifest.json. opts: {seed, jitter (true: the Python bench's arrival jitter),
+   *  ballSpread (null | BALL_SPREAD keys to vary per shot: bench.py set_ball_spread)}. */
   constructor(sim, manifest, opts = {}) {
     this.sim = sim; this.M = manifest; this.D = manifest.design;
     this.jitter = opts.jitter ?? false;
     this.rand = rng(opts.seed ?? 0);
+    // ball-to-ball variation: numpy's default_rng(seed + 7919) stream, draw for draw with bench.py's spread_rng
+    this.spreadRng = new NumpyRNG((opts.seed ?? 0) + 7919);
+    this.ballSpread = null; this.lastBallDraw = null; this._ballNominal = null;
+    this.setBallSpread(opts.ballSpread);
     const C = manifest.controller;
     this.hub = new Hub(C.hub, C.wheels, !C.motor);
     this.motor = C.motor ? new Motor(C.motor, this.hub) : null;
     this.feeder = C.feeder ? new Feeder({ ...C.feeder, battery_v: C.motor?.battery_v ?? 12 }, this.motor) : null;
     this.servos = new Servos(C.servos);
+    this.lift = C.lift ? new LiftServo(C.lift) : null;
     this.air = new Air(manifest.air, manifest.balls);
     this.trackers = new Set();
     this.onShot = null;                  // callback(result) when a tracker finishes
     this.tracker = { postStep: () => this._track() };
-    this.hooks = [this.hub, this.motor, this.feeder, this.servos, this.air, this.tracker].filter(Boolean);
+    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.air, this.tracker].filter(Boolean);
     for (const h of this.hooks) sim.addHook(h);
     this._init();
   }
@@ -77,6 +106,7 @@ export class Shooter {
     const sim = this.sim, M = this.M;
     this.balls = M.balls.map((b) => ({ ...b, body: sim.bodyId(b.name), geom: sim.geomId(b.name + '_geom'),
       qadr: sim.qadr(b.name + '_free'), vadr: sim.vadr(b.name + '_free') }));
+    if (!this._ballNominal) this._captureNominal();
     const set = (k) => new Set((M.geom_sets[k] || []).map((g) => sim.geomId(g)));
     this.rig = set('rig'); this.wheelG = set('wheel');
     this.hoodG = new Set((M.geom_sets.hood || M.geom_sets.rig.filter((g) => g.startsWith('hood_s'))).map((g) => sim.geomId(g)));
@@ -92,11 +122,62 @@ export class Shooter {
     this.next_ball = 0;
     this.inject_speed = this.D.inject_speed;
     this.feeder_u = this.M.controller.feeder?.u ?? 0;
+    const cell = this.M.controller.cell;
+    if (cell) {                                     // bench.py __init__: the robot (cell + lift) under the turret's axis
+      this.b_robot = sim.m.body_mocapid[sim.bodyId(cell.robot)];
+      this.j_lslide = sim.qadr(cell.slide); this.v_lslide = sim.vadr(cell.slide);
+      sim.mocap_pos.set([cell.origin[0], cell.origin[1], cell.origin[2] + this.D.height_m], 3 * this.b_robot);
+      if (this.lift) this.lift.u = 0;
+      sim.forward();
+    }
     this.trackers.clear();
   }
 
-  /** Back to t = 0 (mj_resetData) with the controllers re-initialised. */
-  reset() { this.sim.reset(); this._init(); }
+  /** Back to t = 0 (mj_resetData) with the controllers re-initialised; every ball back to its nominal properties. */
+  reset() { this.sim.reset(); this._restoreNominal(); this._init(); }
+
+  // ------------------------------------------------------------------ ball-to-ball variation (bench.py)
+  /** Each ball's nominal model values (bench.py __init__ _ball_nominal), read once from the freshly loaded model. */
+  _captureNominal() {
+    const m = this.sim.m; this._ballNominal = new Map();
+    const p1 = m.pair_geom1, p2 = m.pair_geom2;
+    for (const b of this.balls) {
+      const g = b.geom, bd = m.geom_bodyid[g], pairs = [];
+      for (let i = 0; i < m.npair; i++) if (p1[i] === g || p2[i] === g) pairs.push(i);
+      this._ballNominal.set(g, { bd, r: m.geom_size[3 * g], rb: m.geom_rbound[g], mass: m.body_mass[bd],
+        inertia: Array.from(m.body_inertia.subarray(3 * bd, 3 * bd + 3)), solref: [m.geom_solref[2 * g], m.geom_solref[2 * g + 1]],
+        pairs, pair_solref: pairs.map((i) => [m.pair_solref[2 * i], m.pair_solref[2 * i + 1]]) });
+    }
+  }
+
+  _restoreNominal() { if (this._ballNominal) for (const b of this.balls) this._setBall(b, { diameter: 0, mass: 0, stiffness: 0, cor: 0 }); }
+
+  /** bench.py set_ball_spread: null (nominal balls) | an iterable of BALL_SPREAD keys to vary (a fresh ball per shot). */
+  setBallSpread(props) { const l = props ? Array.from(props) : []; this.ballSpread = l.length ? l : null; }
+
+  /** bench.py draw_ball: this ball nominal, then (if ballSpread) a fresh draw in BALL_SPREAD's order. -> the draw. */
+  drawBall(ball) {
+    const SP = this.M.controller.ball_spread || BALL_SPREAD, dr = {};
+    for (const k of Object.keys(SP))
+      dr[k] = this.ballSpread && this.ballSpread.includes(k) ? truncNormal(this.spreadRng, SP[k][0], SP[k][1]) : 0.0;
+    this._setBall(ball, dr);
+    this.lastBallDraw = { ...dr };
+    return this.lastBallDraw;
+  }
+
+  /** The model values for a ball at draw dr (fractions), in bench.py draw_ball's arithmetic. */
+  _setBall(ball, dr) {
+    const m = this.sim.m, g = ball.geom, N = this._ballNominal.get(g), bd = N.bd;
+    const fd = 1 + dr.diameter, fm = 1 + dr.mass, fk = 1 + dr.stiffness;
+    m.geom_size[3 * g] = N.r * fd; m.geom_rbound[g] = N.rb * fd;
+    m.body_mass[bd] = N.mass * fm;
+    for (let i = 0; i < 3; i++) m.body_inertia[3 * bd + i] = N.inertia[i] * fm * fd * fd;
+    const k0 = -N.solref[0], c0 = -N.solref[1];
+    // COR -> damping: measured 2026-10-06, damping ~ COR^-2.24 (bench.py)
+    const fc = Math.pow(1 + dr.cor, -2.24), c1 = c0 * fc;
+    m.geom_solref[2 * g] = -k0 * fk; m.geom_solref[2 * g + 1] = -c1;
+    N.pairs.forEach((i, j) => { m.pair_solref[2 * i] = N.pair_solref[j][0] * fk; m.pair_solref[2 * i + 1] = N.pair_solref[j][1] * fc; });
+  }
 
   // ------------------------------------------------------------------ commands (bench.py)
   setRpm(rpm) { this.hub.setRpm(rpm); }
@@ -118,9 +199,9 @@ export class Shooter {
     tol = tol ?? this.D.gate_tol;
     const s = this.sim, S = this.servos.S;
     return this.hub.ready(tol)
-      && Math.abs(s.qpos[this.j_arm] - S.angle.tgt) < rad(0.25)
+      && Math.abs(s.qpos[this.j_arm] - S.angle.tgt) < rad(this.D.settle_arm_deg ?? 0.25)
       && Math.abs(s.qvel[this.v_arm]) < rad(5.0)
-      && Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < 0.0003;
+      && Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < (this.D.settle_gap_mm ?? 0.3) / 1000;
   }
 
   waitReady(limit_s = 3.0, tol) {
@@ -143,6 +224,20 @@ export class Shooter {
     const s = this.sim, mc = this.M.mocaps || {}, m = s.m, h = this.D.height_m;
     const arm = s.qpos[this.j_arm], gap = s.qpos[this.j_gap];
     const quatX = (a) => [Math.cos(a / 2), Math.sin(a / 2), 0, 0];
+    const K = this.M.mocap_kin || {};
+    if (K.v9) {   // render.py v9_mocaps: pinion on the sliding hood, the slide's crank-slider (exact kinematics)
+      const quatZ = (a) => [Math.cos(a / 2), 0, 0, Math.sin(a / 2)];
+      const set = (name, pos, q) => { const b = m.body_mocapid[s.bodyId(name)]; s.mocap_pos.set(pos, 3 * b); s.mocap_quat.set(q, 4 * b); };
+      if (mc.pinion) { const o = mc.pinion.origin; set('pinion', [o[0], o[1] - gap, o[2] + h], quatX(K.pinion_ratio * arm)); }
+      if (mc.crank && mc.link) {
+        const o = mc.crank.origin, r = K.crank_r, L = K.link_L, dy = (K.pin_y - gap) - o[1];
+        const th = Math.acos(Math.min(1, Math.max(-1, (r * r + dy * dy - L * L) / (2 * r * dy))));
+        set('crank', [o[0], o[1], o[2] + h], quatZ(th));
+        const pc = [o[0] - r * Math.sin(th), o[1] + r * Math.cos(th), o[2] + h];
+        set('link', pc, quatZ(Math.atan2(-r * Math.sin(th), dy - r * Math.cos(th))));
+      }
+      return;
+    }
     if (mc.pinion) {
       const b = m.body_mocapid[s.bodyId('pinion')];
       s.mocap_quat.set(quatX(-this.D.angle_ratio * arm), 4 * b);
@@ -173,11 +268,11 @@ export class Shooter {
   park(ball, k) { const p = this.M.controller.park; this.place(ball, [p.x + p.dx * k, 0, p.z], [0, 0, 0]); }
 
   /** Park balls whose flight is over (on the floor, or far to the side) so a burst reuses them. */
-  parkAllFlown() {
-    const X = this.sim.xpos;
+  parkAllFlown() {   // bench.py park_all_flown: also a ball coming back DOWN onto the shooter (a near-vertical shot)
+    const X = this.sim.xpos, V = this.sim.qvel, h = this.D.height_m;
     this.balls.forEach((b, k) => {
       const o = 3 * b.body;
-      if (X[o] < 2.0 && (X[o + 2] < 0.06 || Math.abs(X[o + 1]) > 2.5)) this.park(b, k);
+      if (X[o] < 2.0 && (X[o + 2] < 0.06 || Math.abs(X[o + 1]) > 2.5 || (Math.abs(X[o + 1]) < 0.6 && X[o + 2] < h + 0.3 && V[b.vadr + 2] < -0.5))) this.park(b, k);
     });
   }
 
@@ -197,15 +292,53 @@ export class Shooter {
   }
 
   inject(ball) {
+    this.drawBall(ball);
     const C = this.M.controller;
     if (C.feeder) return this.stage(ball);
+    if (C.cell) return this.cellStart(ball);
     const h = this.D.height_m;
     const { pos, vdir } = C.inject === 'feed_column' ? DS.feedStart(this.D, ball.type)
       : DS.mouth(this.D, ball.type, this.armDeg(), this.sim.qpos[this.j_gap]);
     const j = this._jitter();
+    if (this.jitter && this.D.flags && this.D.flags.bore_feed && this.D.flags.bore_play) {   // anywhere in the free disc
+      const rr = Math.sqrt(this.rand.uniform(0, 1)) * DS.borePlay(this.D, ball.type), th = this.rand.uniform(0, 2 * Math.PI);
+      j[0] = rr * Math.cos(th); j[1] = rr * Math.sin(th);
+    }
+    if (this.D.flags && this.D.flags.feed_front) {          // v9 (bench.py inject): on the bore's front wall, never inside it
+      j[1] = -Math.abs(j[1]);
+      let cx = j[0], cy = pos[0] + j[1] + this.D.feed_offset_mm / 1000;
+      const lim = this.D.bore_d_mm / 2000 - DS.ballD(this.D, ball.type) / 2 - 0.0005, n = Math.hypot(cx, cy);
+      if (n > lim) { cx *= lim / n; cy *= lim / n; j[0] = cx; j[1] = cy - this.D.feed_offset_mm / 1000 - pos[0]; }
+    }
     const f = this.jitter ? this.rand.uniform(1 - C.inject_jitter.speed, 1 + C.inject_jitter.speed) : 1;
     const sp = this.inject_speed * f;
     this.place(ball, [0 + j[0], pos[0] + j[1], pos[1] + h + j[2]], [0, vdir[0] * sp, vdir[1] * sp]);
+    return this.overlap(ball);
+  }
+
+  /** v9 boost (bench.py cell_start): the ball in the robot's carousel cell, pressed on its far wall by the sprung lift
+   *  wheel; the robot at a random angle under the turret; small indexing roll; lift servo at 90-100 %. */
+  cellStart(ball) {
+    const C = this.M.controller.cell, s = this.sim, h = this.D.height_m, jit = this.jitter;
+    const r = s.m.geom_size[3 * ball.geom];          // the drawn ball's radius (bench.py cell_start reads the model)
+    this.balls.forEach((bb, k) => {                 // a ball left in the cell (a stalled shot) is cleared (bench.py cell_start)
+      if (bb === ball) return;
+      const X = s.xpos, q = 3 * bb.body;
+      if (Math.hypot(X[q] - C.origin[0], X[q + 1] - C.origin[1], X[q + 2] - C.origin[2] - h) < 0.30) this.park(bb, k);
+    });
+    const U = (lo, hi) => this.rand.uniform(lo, hi);
+    const phi = jit ? U(0, 2 * Math.PI) : 0;
+    const off = jit ? U(0, 0.001) : 0;
+    let xb = -(C.r - r) + off, yb = jit ? U(-0.002, 0.002) : 0;
+    const lim = C.r - r - 0.0005, n = Math.hypot(xb, yb);
+    if (n > lim) { xb *= lim / n; yb *= lim / n; }
+    const zb = C.floor + r + 0.0005, c = Math.cos(phi), sn = Math.sin(phi), o = C.origin;
+    s.mocap_quat.set([Math.cos(phi / 2), 0, 0, Math.sin(phi / 2)], 4 * this.b_robot);
+    s.qpos[this.j_lslide] = Math.max(0, xb + r - C.rim); s.qvel[this.v_lslide] = 0;
+    const vel = jit ? [U(-0.03, 0.03), U(-0.03, 0.03), 0] : [0, 0, 0];
+    const w = jit ? [U(-3, 3), U(-3, 3), U(-3, 3)] : [0, 0, 0];
+    this.place(ball, [o[0] + c * xb - sn * yb, o[1] + sn * xb + c * yb, zb + h], vel, w);
+    if (this.lift) this.lift.u = jit ? U(0.9, 1.0) : 1.0;
     return this.overlap(ball);
   }
 
@@ -266,6 +399,7 @@ export class ShotTracker {
     this.B = B; this.bt = bt; this.target = target;
     this.ball = B.freeBall(bt);
     this.deep = B.inject(this.ball);
+    this.draw = B.ballSpread ? B.lastBallDraw : null;     // this ball's variation draw (fractions), if varied
     const s = B.sim;
     this.t0 = s.time; this.last = null; this.first = null; this.taken = false; this.peak = 0;
     this.rpm0 = B.wheelRpm(); this.rpm_min = this.rpm0;
@@ -317,10 +451,11 @@ export class ShotTracker {
 
   finish() {
     const B = this.B, last = this.last, S = B.M.controller.shot;
-    B.feed_u = 0;
+    B.feed_u = 0; if (B.lift) B.lift.u = 0;
     const jam = (!this.taken) || last === null || B.sim.time - this.t0 >= S.max_s;
     const out = { type: this.bt, t: this.t0, jam, taken: this.taken, arm_deg: this.arm0, gap_mm: this.gap0,
       rpm_target: this.target_rpm, rpm_at_feed: this.rpm0, inject_overlap_mm: 1000 * this.deep, ball: this.ball.name, ...this.meta };
+    if (this.draw) out.ball_draw = this.draw;
     if (!jam) {
       const [t, p, v, w] = last;
       const sp = Math.hypot(v[0], v[1], v[2]);

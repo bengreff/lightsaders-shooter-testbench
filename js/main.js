@@ -3,7 +3,7 @@
 
 import { loadMujoco } from './cdn.js';
 import { Sim } from './sim.js';
-import { Shooter } from './shooter.js';
+import { Shooter, BALL_SPREAD } from './shooter.js';
 import { View } from './view.js';
 import { fetchVariant } from './assets.js';
 import { CalMap } from './calib.js';
@@ -22,7 +22,7 @@ const app = window.app = {
   mj: null, sim: null, shooter: null, view: null, manifest: null, variant: null, variants: [], base: null,
   map: null, maps: {},               // the calibration in use, and browser recalibrations per variant id
   s: { ball: 'pollen', mode: 'target', speed: 6.0, elev: 72.5, rpm: 2600, arm: 0, sq_pollen: 2.4, sq_nectar: 1.0,
-       feeder_u: 1.0, burst: 6, slow: 1, auto: false, paused: false, view: 0, jitter: true, collision: false },
+       feeder_u: 1.0, burst: 6, slow: 1, auto: false, paused: false, view: 0, jitter: true, vary: true, collision: false },
   queue: 0, queueActive: false, lastFeed: null, tracker: null, recov: null, shots: [], cmd: [0, 2600, true],
   achieved: 0, fps: 60,
   prof: { phys: 0, draw: 0, frames: 0, steps: 0 },   // ms per frame accumulators (app.prof; reset by hand)
@@ -76,7 +76,8 @@ async function loadVariant(id) {
   if (app.sampleHook) app.sim.removeHook(app.sampleHook);
   app.sim.loadScene(data.xml, data.files);
   app.manifest = data.manifest; app.variant = v; app.base = data.base;
-  const B = app.shooter = new Shooter(app.sim, data.manifest, { jitter: app.s.jitter, seed: (Math.random() * 2 ** 31) | 0 });
+  const B = app.shooter = new Shooter(app.sim, data.manifest, { jitter: app.s.jitter, seed: (Math.random() * 2 ** 31) | 0,
+    ballSpread: app.s.vary ? Object.keys(data.manifest.controller.ball_spread || BALL_SPREAD) : null });
   B.onShot = onShot;
   app.fireHook = app.sim.addHook({ preStep: fireStep }, true);
   app.sampleHook = app.sim.addHook({ postStep: sampleStep });
@@ -87,6 +88,9 @@ async function loadVariant(id) {
   if (!app.map && app.s.mode === 'target') app.s.mode = 'direct';
   const D = data.manifest.design, lim = D.angle_travel_deg;
   const sa = document.querySelector('.slider[data-key="arm"] input'); sa.min = -lim; sa.max = lim;
+  const fixedAngle = !(lim > 1e-9);                       // a fixed-angle design: speed is the only target (no hood actuator)
+  for (const k of ['arm', 'elev']) document.querySelector(`.slider[data-key="${k}"]`).style.display = fixedAngle ? 'none' : '';
+  if (fixedAngle) app.s.arm = 0;
   if (!app._sqInit) { app.s.sq_pollen = D.squeeze_pollen_mm; app.s.sq_nectar = D.squeeze_nectar_mm; app.s.feeder_u = data.manifest.controller.feeder?.u ?? 1; app._sqInit = true; }
   document.querySelector('.slider[data-key="feeder_u"]').style.display = data.manifest.controller.feeder ? '' : 'none';
   app.tracker = null; app.queue = 0; app.recov = null; app.strip.clear();
@@ -103,11 +107,36 @@ async function loadVariant(id) {
 }
 
 // ------------------------------------------------------------------ the command (testbench.py command/apply)
+/** The map solves at the selected squeeze (calib.js CalMap levels); a squeeze slider outside the calibrated range is
+ *  clamped to it, and both squeeze sliders are sized to it. */
+function syncSqueeze() {
+  const M = app.map, s = app.s;
+  if (!M || !M.setSqueeze) return;
+  for (const bt of ['pollen', 'nectar']) {
+    const R = M.sqRange(bt), inp = document.querySelector(`.slider[data-key="sq_${bt}"] input`);
+    if (R) {
+      if (inp) { inp.min = R[0]; inp.max = R[1]; }
+      const c = Math.min(R[1], Math.max(R[0], s[`sq_${bt}`]));
+      if (c !== s[`sq_${bt}`]) s[`sq_${bt}`] = c;
+    }
+    M.setSqueeze(bt, R ? s[`sq_${bt}`] : null);
+  }
+}
+
 function command() {
   const s = app.s;
+  syncSqueeze();
   if (s.mode === 'target' && app.map) {
-    const key = `${s.ball}|${s.speed}|${s.elev}|${app.map === app._cmdMap}`;
-    if (key !== app._cmdKey) { app._cmdKey = key; app._cmdMap = app.map; app._cmd = app.map.solve(s.ball, s.speed, s.elev); }
+    const key = `${s.ball}|${s.speed}|${s.elev}|${s[`sq_${s.ball}`]}|${app.map === app._cmdMap}`;
+    if (key !== app._cmdKey) {
+      app._cmdKey = key; app._cmdMap = app.map;
+      if (!(app.map.T > 1e-9)) {                          // fixed angle (calibrate.py Map.solve): the rpm giving the speed
+        let best = [0, 1600, false], err = Infinity;
+        for (let i = 0; i <= 400; i++) { const q = 1600 + 2800 * i / 400, v = app.map.predict(s.ball, 0, q)[0];
+          if (Math.abs(v - s.speed) < err) { err = Math.abs(v - s.speed); best = [0, q, Math.abs(v / s.speed - 1) < 0.005]; } }
+        app._cmd = best; s.elev = Math.round(app.map.predict(s.ball, 0, best[1])[1] * 10) / 10;
+      } else app._cmd = app.map.solve(s.ball, s.speed, s.elev);
+    }
     return app._cmd;
   }
   return [s.arm, s.rpm, true];
@@ -127,6 +156,7 @@ function apply() {
   B.setAngle(arm); B.setRpm(rpm);
   B.feeder_u = s.feeder_u;
   B.jitter = s.jitter;
+  B.setBallSpread(s.vary ? Object.keys(B.M.controller.ball_spread || BALL_SPREAD) : null);
 }
 
 // ------------------------------------------------------------------ per step: firing (testbench.py advance) and sampling
@@ -179,12 +209,15 @@ function frame(now) {
     budget += dt / app.s.slow;
     const want = Math.floor(budget / ts);
     const t0 = performance.now(); let done = 0;
+    // the clock is checked after EVERY step (MEASURED 2026-10-08: a ball pressed into many convex pieces at once makes
+    // single steps 10-80x slower; checked only per 25-step chunk, one such chunk froze the frame): the sim runs slower
+    // for that moment instead of stalling the picture; trails are still sampled every CHUNK steps
     while (done < want) {
-      const k = Math.min(CHUNK, want - done);
-      sim.step(k); done += k;
-      app.view.sampleTrails(sim);
+      sim.step(1); done += 1;
+      if (done % CHUNK === 0) app.view.sampleTrails(sim);
       if (performance.now() - t0 > FRAME_MS) break;
     }
+    if (done % CHUNK) app.view.sampleTrails(sim);
     B.parkAllFlown();
     app.prof.phys += performance.now() - t0; app.prof.steps += done;
     budget = done < want ? 0 : budget - done * ts;
@@ -215,8 +248,86 @@ function buildSliders() {
   }
 }
 
+/** What the calibrated shooter can actually do for the current ball (Ben 2026-10-06: no "OUT OF RANGE" - size the
+ *  sliders). Speed and angle limit each other, so each slider's range is what the map reaches AT THE OTHER'S VALUE:
+ *  for every hood angle the wheel speed that gives the wanted exit speed (bisection: speed rises with rpm) -> the exit
+ *  angles reachable at that speed; and for every wheel speed the hood angle that gives the wanted exit angle -> the
+ *  speeds reachable at that angle. A small margin keeps the ends solvable (solve's tolerance: 0.5 %, 0.25 deg). */
+function targetLimits() {
+  const s = app.s, M = app.map;
+  if (!M) return null;
+  syncSqueeze();
+  const key = `${s.ball}|${s.speed}|${s.elev}|${s[`sq_${s.ball}`]}|${app.variant?.id}`;
+  if (app._limKey === key && app._limMap === M) return app._lim;
+  const T = M.T, R0 = 1600, R1 = 4400, bt = s.ball;
+  if (!(T > 1e-9)) {                                       // fixed angle: speed is the only target
+    let vlo = Infinity, vhi = -Infinity;
+    for (let j = 0; j <= 80; j++) { const v = M.predict(bt, 0, R0 + (R1 - R0) * j / 80)[0]; vlo = Math.min(vlo, v); vhi = Math.max(vhi, v); }
+    const lim = { all: { speed: [vlo, vhi], elev: [45, 90] }, speed: [Math.ceil(vlo * 1.003 * 20) / 20, Math.floor(vhi * 0.997 * 20) / 20] };
+    app._limKey = key; app._limMap = M; app._lim = lim; return lim;
+  }
+  const bis = (f, lo, hi) => { let flo = f(lo), fhi = f(hi); if (flo * fhi > 0) return null;
+    for (let k = 0; k < 40; k++) { const mid = 0.5 * (lo + hi), fm = f(mid); if (flo * fm <= 0) { hi = mid; fhi = fm; } else { lo = mid; flo = fm; } }
+    return 0.5 * (lo + hi); };
+  let elo = Infinity, ehi = -Infinity, vlo = Infinity, vhi = -Infinity;
+  for (let i = 0; i <= 80; i++) {                         // exit angles reachable at the wanted speed
+    const a = -T + 2 * T * i / 80, r = bis((q) => M.predict(bt, a, q)[0] - s.speed, R0, R1);
+    if (r !== null) { const e = M.predict(bt, a, r)[1]; elo = Math.min(elo, e); ehi = Math.max(ehi, e); }
+  }
+  for (let j = 0; j <= 80; j++) {                         // exit speeds reachable at the wanted angle
+    const q = R0 + (R1 - R0) * j / 80, a = bis((x) => M.predict(bt, x, q)[1] - s.elev, -T, T);
+    if (a !== null) { const v = M.predict(bt, a, q)[0]; vlo = Math.min(vlo, v); vhi = Math.max(vhi, v); }
+  }
+  // the whole map's reach (a fallback when nothing is reachable at the other slider's value)
+  let Vlo = Infinity, Vhi = -Infinity, Elo = Infinity, Ehi = -Infinity;
+  for (let i = 0; i <= 30; i++) for (let j = 0; j <= 30; j++) {
+    const [v, e] = M.predict(bt, -T + 2 * T * i / 30, R0 + (R1 - R0) * j / 30);
+    Vlo = Math.min(Vlo, v); Vhi = Math.max(Vhi, v); Elo = Math.min(Elo, e); Ehi = Math.max(Ehi, e);
+  }
+  const lim = { all: { speed: [Vlo, Vhi], elev: [Math.max(45, Elo), Math.min(90, Ehi)] } };
+  if (isFinite(elo)) lim.elev = [Math.ceil((Math.max(45, elo) + 0.15) * 2) / 2, Math.floor((Math.min(90, ehi) - 0.15) * 2) / 2];
+  if (isFinite(vlo)) lim.speed = [Math.ceil((vlo * 1.003) * 20) / 20, Math.floor((vhi * 0.997) * 20) / 20];
+  app._limKey = key; app._limMap = M; app._lim = lim;
+  return lim;
+}
+
+function applyLimits() {
+  const s = app.s;
+  for (let pass = 0; pass < 40; pass++) {                  // clamping one can move the other's range: settle
+    const L = targetLimits();
+    if (!L) return;
+    let moved = false;
+    for (const k of ['speed', 'elev']) {
+      if (!L[k] && k === 'elev' && !(app.map.T > 1e-9)) continue;     // fixed angle: no angle target
+      if (!L[k] || L[k][0] > L[k][1]) {                   // nothing reachable at the other's value: walk toward the middle
+        const mid = 0.5 * (L.all[k][0] + L.all[k][1]), step = k === 'speed' ? 0.25 : 2.0;
+        const c = Math.abs(mid - s[k]) <= step ? mid : s[k] + Math.sign(mid - s[k]) * step;
+        s[k] = Math.round(c * (k === 'speed' ? 20 : 2)) / (k === 'speed' ? 20 : 2); app._cmdKey = null; moved = true; continue;
+      }
+      const inp = document.querySelector(`.slider[data-key="${k}"] input`);
+      if (document.activeElement !== inp || pass > 0) { inp.min = L[k][0]; inp.max = L[k][1]; }
+      const c = Math.min(L[k][1], Math.max(L[k][0], s[k]));
+      if (c !== s[k]) { s[k] = c; app._cmdKey = null; moved = true; }
+    }
+    if (!moved) break;
+  }
+  // the map's reach can have small holes (a bumpy fit): if this pair does not solve, step the angle (then the speed) to
+  // the nearest pair that does, so the command never reads OUT OF RANGE
+  const M = app.map; if (!M) return;
+  if (M.solve(s.ball, s.speed, s.elev)[2]) return;
+  for (let d = 0.5; d <= 12; d += 0.5) for (const sg of [1, -1]) {
+    const e = s.elev + sg * d;
+    if (M.solve(s.ball, s.speed, e)[2]) { s.elev = e; app._cmdKey = null; return; }
+  }
+  for (let d = 0.05; d <= 1.5; d += 0.05) for (const sg of [1, -1]) {
+    const v = Math.round((s.speed + sg * d) * 20) / 20;
+    if (M.solve(s.ball, v, s.elev)[2]) { s.speed = v; app._cmdKey = null; return; }
+  }
+}
+
 function syncUi() {
   const s = app.s;
+  applyLimits();
   for (const el of document.querySelectorAll('.slider')) {
     const key = el.dataset.key, inp = el.querySelector('input'), d = +el.dataset.fmt;
     if (document.activeElement !== inp) inp.value = s[key];
@@ -259,6 +370,7 @@ const TIPS = {
   azimuth: 'Sideways angle of the shot (0 = straight)', 'motor peak': 'Highest flywheel motor current during the shot',
   'battery min': 'Lowest battery voltage during the shot', 'feeder peak': 'Highest feeder motor current during the shot',
   'wheel / hood': 'Wheel rpm and hood angle the shot was fired with', 'peak force': 'Largest total contact force on the ball',
+  ball: 'This ball\'s drawn deviation from nominal: diameter and mass (stiffness and bounce vary too)',
 };
 const errClass = (x, good, warn) => (x == null ? '' : Math.abs(x) <= good ? 'good' : Math.abs(x) <= warn ? 'warn' : 'bad');
 
@@ -284,6 +396,7 @@ function renderShot() {
     ['azimuth', `${sgn(r.azimuth, 2)} deg`], ['motor peak', `${fmt(r.motor_current_peak_a, 2)} A`],
     ['battery min', `${fmt(r.battery_min_v, 2)} V`], ['feeder peak', `${fmt(r.feeder_current_peak_a, 2)} A`],
     ['wheel / hood', `${fmt(r.rpm_target, 0)} rpm ${sgn(r.arm_deg, 2)}`], ['peak force', `${fmt(r.peak_force_n, 0)} N`]];
+  if (r.ball_draw) items.push(['ball', `d ${sgn(100 * r.ball_draw.diameter, 2)} % m ${sgn(100 * r.ball_draw.mass, 1)} %`]);
   g.innerHTML = items.map(([k, v]) => `<div title="${TIPS[k] || ''}"><span>${k}</span><b>${v}</b></div>`).join('');
 }
 
@@ -379,6 +492,7 @@ function wireUi() {
   $('resetStats').onclick = () => { app.shots = []; app.shotDirty = app.logDirty = true; };
   $('resetSim').onclick = () => { app.shooter.reset(); app.view.clearTrails(); app.tracker = null; app.queue = 0; app.recov = null; app.strip.clear(); app.lastFeed = null; };
   $('jitter').onchange = () => { s.jitter = $('jitter').checked; };
+  $('vary').onchange = () => { s.vary = $('vary').checked; apply(); };
   $('collision').onchange = () => { s.collision = $('collision').checked; app.view.setShowCollision(s.collision); };
   $('variant').onchange = () => loadVariant($('variant').value).catch(fail);
   $('recal').onclick = recalibrate;
@@ -410,7 +524,7 @@ function wireUi() {
       e.preventDefault();
       const up = e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0, rt = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
       const T = app.manifest.design.angle_travel_deg;
-      if (s.mode === 'target') { s.speed = Math.round(Math.min(9.5, Math.max(3.5, s.speed + 0.05 * up)) * 100) / 100; s.elev = Math.min(88, Math.max(50, s.elev + 0.5 * rt)); }
+      if (s.mode === 'target') { s.speed = Math.round(Math.min(9.5, Math.max(3.5, s.speed + 0.05 * up)) * 100) / 100; s.elev = Math.min(88, Math.max(50, s.elev + 0.5 * rt)); applyLimits(); }
       else { s.rpm = Math.min(4400, Math.max(1600, s.rpm + 25 * up)); s.arm = Math.min(T, Math.max(-T, s.arm + 0.25 * rt)); }
     } else return;
     syncUi();

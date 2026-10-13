@@ -520,6 +520,18 @@
    0.85,
    1.0
   ],
+  "print_blue": [
+   0.2,
+   0.42,
+   0.8,
+   1.0
+  ],
+  "glass": [
+   0.7,
+   0.85,
+   1.0,
+   0.2
+  ],
   "polycord": [
    0.85,
    0.2,
@@ -994,6 +1006,8 @@
    "min_speed": 2.0,
    "gap_s": 0.02
   },
+  "lift": null,
+  "cell": null,
   "spin_up_limit_s": 6.0,
   "inject_jitter": {
    "pos": [
@@ -1048,6 +1062,17 @@
   "wrap_margin_deg": 2.0,
   "feed_offset_mm": 31.74,
   "height_m": 0.3,
+  "plate_below_mm": 104.0,
+  "bore_d_mm": 120.0,
+  "lead_in_r_mm": 141.0,
+  "lead_in_top_deg": 185.0,
+  "deflector_r_mm": 250.0,
+  "deflector_z0_mm": -40.0,
+  "deflector_clear_mm": 4.0,
+  "feed_depth_mm": 150.0,
+  "roller_deg": 270.0,
+  "roller_gap_mm": 3.0,
+  "roller_r_mm": 12.7,
   "pulley_pair": 1,
   "turret_offset_mm": 15.0,
   "design_squeeze_pollen_mm": 2.505,
@@ -1075,6 +1100,11 @@
    "feeder_on_arm": true,
    "feeder_wheel": "am-4590_blue",
    "feeder_motor": "2000-0025-0004",
+   "bore_feed": false,
+   "deflector": false,
+   "roller": false,
+   "bore_play": true,
+   "flare_shape": "cos",
    "feed_wrap": false
   }
  },
@@ -1094,6 +1124,7 @@
    ]
   }
  },
+ "mocap_kin": {},
  "variant": {
   "id": "discs2",
   "label": "2 steel discs per side",

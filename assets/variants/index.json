@@ -1,5 +1,19 @@
 [
  {
+  "id": "v9",
+  "label": "v9: sliding round hood + rolling extension",
+  "group": "Design",
+  "folder": "v9",
+  "describe": "Fixed trough hood slides level for NECTAR on a dead-centre crank; an extension rolls up the same circle for flatter shots; the ball is lifted from the carousel cell and caught by two sprung side wheels geared to the flywheel, then rides a fixed front ramp into the pinch. Everything sits on the ring gear."
+ },
+ {
+  "id": "v8",
+  "label": "v8: low flywheel, fed up the bore",
+  "group": "Design",
+  "folder": "v8",
+  "describe": "Flywheel over the bore (axle 128 mm above the turret plate). The ball rides up a 94 mm bore; the hood's straight tail meets the bore edge at the steepest POLLEN setting and its 3 fingers slide back through the static comb's gaps for NECTAR. Collision shapes = the CAD's shapes. Jitter on: the ball arrives anywhere in the bore (sideways too) at +/-10 % speed."
+ },
+ {
   "id": "base",
   "label": "Proposal",
   "group": "Design",
@@ -54,5 +68,12 @@
   "group": "Belt ratio",
   "folder": "belt_1to1",
   "describe": "Motor and wheel turn at the same speed: less torque to hold the wheel's speed."
+ },
+ {
+  "id": "team_turret",
+  "label": "Team turret draft (spring loaded)",
+  "group": "Design",
+  "folder": "team_turret",
+  "describe": "The team's first draft, read from its STEP: fixed exit angle (~56 deg), sprung hood on slotted carriers. Spring, motor drive and hood rest position are ESTIMATES."
  }
 ]

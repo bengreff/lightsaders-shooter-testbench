@@ -100,6 +100,7 @@
       <div class="slider" data-key="burst" title="How many balls BURST fires" data-min="1" data-max="12" data-step="1" data-unit="balls" data-fmt="0">Burst size</div>
       <div class="slider" data-key="slow" title="Slow the simulation down this many times to watch a shot" data-min="1" data-max="40" data-step="1" data-unit="x" data-fmt="0">Slow motion</div>
       <label class="check" title="Vary each ball's starting spot slightly, as real feeding does"><input type="checkbox" id="jitter" checked> arrival jitter (as the Python bench)</label>
+      <label class="check" title="Every shot gets a fresh ball: diameter, mass, stiffness and bounce drawn around nominal, as moulded balls vary (the Python bench's ball variation, the same draws)"><input type="checkbox" id="vary" checked> ball-to-ball variation (as the Python bench)</label>
       <label class="check" title="Show the simple shapes the physics actually uses for contact"><input type="checkbox" id="collision"> show collision shapes</label>
       <div class="row"><button id="pause" class="small-btn" title="Freeze or resume the simulation">Pause <kbd>P</kbd></button><button id="resetSim" class="small-btn" title="Restart the simulation from rest (keeps the shot log)">Reset simulation</button></div>
     </section>
