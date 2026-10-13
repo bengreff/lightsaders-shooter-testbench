@@ -434,7 +434,7 @@
    "type": "pollen",
    "body": 6,
    "geom": 1007,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 4,
    "dofadr": 4
@@ -444,7 +444,7 @@
    "type": "pollen",
    "body": 7,
    "geom": 1008,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 11,
    "dofadr": 10
@@ -454,7 +454,7 @@
    "type": "pollen",
    "body": 8,
    "geom": 1009,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 18,
    "dofadr": 16
@@ -464,7 +464,7 @@
    "type": "pollen",
    "body": 9,
    "geom": 1010,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 25,
    "dofadr": 22
@@ -474,7 +474,7 @@
    "type": "pollen",
    "body": 10,
    "geom": 1011,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 32,
    "dofadr": 28
@@ -484,7 +484,7 @@
    "type": "pollen",
    "body": 11,
    "geom": 1012,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 39,
    "dofadr": 34
@@ -494,7 +494,7 @@
    "type": "pollen",
    "body": 12,
    "geom": 1013,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 46,
    "dofadr": 40
@@ -504,7 +504,7 @@
    "type": "pollen",
    "body": 13,
    "geom": 1014,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 53,
    "dofadr": 46
@@ -515,7 +515,7 @@
    "body": 14,
    "geom": 1015,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 60,
    "dofadr": 52
   },
@@ -525,7 +525,7 @@
    "body": 15,
    "geom": 1016,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 67,
    "dofadr": 58
   },
@@ -535,7 +535,7 @@
    "body": 16,
    "geom": 1017,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 74,
    "dofadr": 64
   },
@@ -545,7 +545,7 @@
    "body": 17,
    "geom": 1018,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 81,
    "dofadr": 70
   },
@@ -555,7 +555,7 @@
    "body": 18,
    "geom": 1019,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 88,
    "dofadr": 76
   },
@@ -565,7 +565,7 @@
    "body": 19,
    "geom": 1020,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 95,
    "dofadr": 82
   },
@@ -575,7 +575,7 @@
    "body": 20,
    "geom": 1021,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 102,
    "dofadr": 88
   },
@@ -585,14 +585,14 @@
    "body": 21,
    "geom": 1022,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 109,
    "dofadr": 94
   }
  ],
  "ball_mass": {
   "pollen": 0.0249,
-  "nectar": 0.0413
+  "nectar": 0.04
  },
  "geom_sets": {
   "rig": [
@@ -1843,7 +1843,7 @@
   },
   "ball_spread": {
    "diameter": [
-    0.0065,
+    0.0053,
     0.02
    ],
    "mass": [
@@ -1924,9 +1924,9 @@
   "design_squeeze_pollen_mm": 0.0,
   "design_squeeze_nectar_mm": 0.0,
   "R_WHEEL": 0.048,
-  "D_POLLEN": 0.0711,
+  "D_POLLEN": 0.07253,
   "D_NECTAR": 0.092,
-  "hood_radius": 0.12955,
+  "hood_radius": 0.13026500000000002,
   "offset": {
    "pollen": 0.0,
    "nectar": 0.0
@@ -1961,9 +1961,9 @@
  "mocap_kin": {},
  "variant": {
   "id": "team_turret",
-  "label": "team_turret",
-  "group": null,
-  "describe": ""
+  "label": "Team turret draft (spring loaded)",
+  "group": "Design",
+  "describe": "The team's first draft, read from its STEP: fixed exit angle (~56 deg), sprung hood on slotted carriers. Spring, motor drive and hood rest position are ESTIMATES."
  },
  "calibration": "calibration.json"
 }

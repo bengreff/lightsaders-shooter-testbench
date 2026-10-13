@@ -18,7 +18,7 @@ const deg = (r) => r * 180 / Math.PI, rad = (d) => d * Math.PI / 180;
 
 /** bench.py BALL_SPREAD (older exports carry none in manifest.controller.ball_spread): per property (sigma, bound) as
  *  fractions of the nominal value; a truncated normal per shot. */
-export const BALL_SPREAD = { diameter: [0.0065, 0.02], mass: [0.015, 0.045], stiffness: [0.10, 0.25], cor: [0.02, 0.05] };
+export const BALL_SPREAD = { diameter: [0.0053, 0.02], mass: [0.015, 0.045], stiffness: [0.10, 0.25], cor: [0.02, 0.05] };
 
 /** bench.py trunc_normal: redraw until |x| <= bound. */
 export function truncNormal(r, sigma, bound) {

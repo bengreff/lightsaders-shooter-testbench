@@ -7,69 +7,6 @@
   "describe": "Fixed trough hood slides level for NECTAR on a dead-centre crank; an extension rolls up the same circle for flatter shots; the ball is lifted from the carousel cell and caught by two sprung side wheels geared to the flywheel, then rides a fixed front ramp into the pinch. Everything sits on the ring gear."
  },
  {
-  "id": "v8",
-  "label": "v8: low flywheel, fed up the bore",
-  "group": "Design",
-  "folder": "v8",
-  "describe": "Flywheel over the bore (axle 128 mm above the turret plate). The ball rides up a 94 mm bore; the hood's straight tail meets the bore edge at the steepest POLLEN setting and its 3 fingers slide back through the static comb's gaps for NECTAR. Collision shapes = the CAD's shapes. Jitter on: the ball arrives anywhere in the bore (sideways too) at +/-10 % speed."
- },
- {
-  "id": "base",
-  "label": "Proposal",
-  "group": "Design",
-  "folder": "base",
-  "describe": "Hogbacks + 3 steel discs per side, polycarbonate hood, 16:24 belt."
- },
- {
-  "id": "discs0",
-  "label": "No steel discs",
-  "group": "Flywheel mass",
-  "folder": "discs0",
-  "describe": "Lighter flywheel: drops more speed per shot, recovers just as fast."
- },
- {
-  "id": "discs1",
-  "label": "1 steel disc per side",
-  "group": "Flywheel mass",
-  "folder": "discs1",
-  "describe": "Lighter flywheel: 1 steel disc per side."
- },
- {
-  "id": "discs2",
-  "label": "2 steel discs per side",
-  "group": "Flywheel mass",
-  "folder": "discs2",
-  "describe": "Lighter flywheel: 2 steel discs per side."
- },
- {
-  "id": "radius_m4",
-  "label": "Hood 4 mm closer to the wheel",
-  "group": "Hood radius",
-  "folder": "radius_m4",
-  "describe": "The hood's arc built 4 mm smaller: tighter pinch."
- },
- {
-  "id": "radius_p4",
-  "label": "Hood 4 mm further from the wheel",
-  "group": "Hood radius",
-  "folder": "radius_p4",
-  "describe": "The hood's arc built 4 mm larger: looser pinch."
- },
- {
-  "id": "alu_hood",
-  "label": "Aluminium hood",
-  "group": "Hood material",
-  "folder": "alu_hood",
-  "describe": "Same hood shape in aluminium: different grip and bounce on the ball."
- },
- {
-  "id": "belt_1to1",
-  "label": "24:24 belt (wheel at motor speed)",
-  "group": "Belt ratio",
-  "folder": "belt_1to1",
-  "describe": "Motor and wheel turn at the same speed: less torque to hold the wheel's speed."
- },
- {
   "id": "team_turret",
   "label": "Team turret draft (spring loaded)",
   "group": "Design",

@@ -6,18 +6,18 @@
  "mujoco_version": "3.13.0",
  "scene": "scene.xml",
  "files": {
-  "../../meshes/catch_blk_l_00.31655ae9.stl": "../../meshes/catch_blk_l_00.31655ae9.stl",
+  "../../meshes/catch_blk_l_00.b9eb9072.stl": "../../meshes/catch_blk_l_00.b9eb9072.stl",
   "../../meshes/catch_blk_l_01.4bc31e18.stl": "../../meshes/catch_blk_l_01.4bc31e18.stl",
-  "../../meshes/catch_blk_r_02.cd15b4fa.stl": "../../meshes/catch_blk_r_02.cd15b4fa.stl",
+  "../../meshes/catch_blk_r_02.f94fd608.stl": "../../meshes/catch_blk_r_02.f94fd608.stl",
   "../../meshes/catch_blk_r_03.735845fb.stl": "../../meshes/catch_blk_r_03.735845fb.stl",
-  "../../meshes/catch_pin_l_04.5a091750.stl": "../../meshes/catch_pin_l_04.5a091750.stl",
-  "../../meshes/catch_pin_r_05.42b4eeab.stl": "../../meshes/catch_pin_r_05.42b4eeab.stl",
-  "../../meshes/catch_wheel_l_06.33c3c1ad.stl": "../../meshes/catch_wheel_l_06.33c3c1ad.stl",
-  "../../meshes/catch_wheel_l_07.50cb6393.stl": "../../meshes/catch_wheel_l_07.50cb6393.stl",
+  "../../meshes/catch_pin_l_04.3ef5f44a.stl": "../../meshes/catch_pin_l_04.3ef5f44a.stl",
+  "../../meshes/catch_pin_r_05.4e083e29.stl": "../../meshes/catch_pin_r_05.4e083e29.stl",
+  "../../meshes/catch_wheel_l_06.b8e3ffc4.stl": "../../meshes/catch_wheel_l_06.b8e3ffc4.stl",
+  "../../meshes/catch_wheel_l_07.901837e9.stl": "../../meshes/catch_wheel_l_07.901837e9.stl",
   "../../meshes/catch_wheel_l_08.1d86e745.stl": "../../meshes/catch_wheel_l_08.1d86e745.stl",
-  "../../meshes/catch_wheel_r_09.1142be9c.stl": "../../meshes/catch_wheel_r_09.1142be9c.stl",
-  "../../meshes/catch_wheel_r_10.32c97176.stl": "../../meshes/catch_wheel_r_10.32c97176.stl",
-  "../../meshes/catch_wheel_r_11.1d86e745.stl": "../../meshes/catch_wheel_r_11.1d86e745.stl",
+  "../../meshes/catch_wheel_r_09.26b56405.stl": "../../meshes/catch_wheel_r_09.26b56405.stl",
+  "../../meshes/catch_wheel_r_10.5919713d.stl": "../../meshes/catch_wheel_r_10.5919713d.stl",
+  "../../meshes/catch_wheel_r_11.eac3c5b7.stl": "../../meshes/catch_wheel_r_11.eac3c5b7.stl",
   "../../meshes/crank_12.8907adaf.stl": "../../meshes/crank_12.8907adaf.stl",
   "../../meshes/cross_13.313f6257.stl": "../../meshes/cross_13.313f6257.stl",
   "../../meshes/cross_14.84414ab8.stl": "../../meshes/cross_14.84414ab8.stl",
@@ -35,7 +35,7 @@
   "../../meshes/frame_26.d987c589.stl": "../../meshes/frame_26.d987c589.stl",
   "../../meshes/frame_27.e909a157.stl": "../../meshes/frame_27.e909a157.stl",
   "../../meshes/frame_28.2b9a9540.stl": "../../meshes/frame_28.2b9a9540.stl",
-  "../../meshes/frame_29.e972e4b4.stl": "../../meshes/frame_29.e972e4b4.stl",
+  "../../meshes/frame_29.630da400.stl": "../../meshes/frame_29.630da400.stl",
   "../../meshes/frame_30.2df46325.stl": "../../meshes/frame_30.2df46325.stl",
   "../../meshes/frame_31.d4ccc6fe.stl": "../../meshes/frame_31.d4ccc6fe.stl",
   "../../meshes/frame_32.cdc00167.stl": "../../meshes/frame_32.cdc00167.stl",
@@ -53,15 +53,15 @@
   "../../meshes/lift_gear_44.f78ed4ff.stl": "../../meshes/lift_gear_44.f78ed4ff.stl",
   "../../meshes/lift_slide_45.2a36441a.stl": "../../meshes/lift_slide_45.2a36441a.stl",
   "../../meshes/lift_slide_46.8561093a.stl": "../../meshes/lift_slide_46.8561093a.stl",
-  "../../meshes/lift_slide_47.4c95d19a.stl": "../../meshes/lift_slide_47.4c95d19a.stl",
-  "../../meshes/lift_slide_48.11fa8e7e.stl": "../../meshes/lift_slide_48.11fa8e7e.stl",
+  "../../meshes/lift_slide_47.36f3606b.stl": "../../meshes/lift_slide_47.36f3606b.stl",
+  "../../meshes/lift_slide_48.af285159.stl": "../../meshes/lift_slide_48.af285159.stl",
   "../../meshes/lift_slide_49.b3ca7194.stl": "../../meshes/lift_slide_49.b3ca7194.stl",
-  "../../meshes/lift_slide_50.5131004c.stl": "../../meshes/lift_slide_50.5131004c.stl",
-  "../../meshes/lift_wheel_51.0b40ac1e.stl": "../../meshes/lift_wheel_51.0b40ac1e.stl",
-  "../../meshes/lift_wheel_52.5b3d8f66.stl": "../../meshes/lift_wheel_52.5b3d8f66.stl",
-  "../../meshes/lift_wheel_53.75fc9367.stl": "../../meshes/lift_wheel_53.75fc9367.stl",
-  "../../meshes/lift_wheel_54.ea3b98a6.stl": "../../meshes/lift_wheel_54.ea3b98a6.stl",
-  "../../meshes/lift_wheel_55.476308d0.stl": "../../meshes/lift_wheel_55.476308d0.stl",
+  "../../meshes/lift_slide_50.f43cf8e0.stl": "../../meshes/lift_slide_50.f43cf8e0.stl",
+  "../../meshes/lift_wheel_51.2d9a7ef1.stl": "../../meshes/lift_wheel_51.2d9a7ef1.stl",
+  "../../meshes/lift_wheel_52.a6645753.stl": "../../meshes/lift_wheel_52.a6645753.stl",
+  "../../meshes/lift_wheel_53.9b1ea505.stl": "../../meshes/lift_wheel_53.9b1ea505.stl",
+  "../../meshes/lift_wheel_54.d2f4a01d.stl": "../../meshes/lift_wheel_54.d2f4a01d.stl",
+  "../../meshes/lift_wheel_55.ace7c352.stl": "../../meshes/lift_wheel_55.ace7c352.stl",
   "../../meshes/link_56.00cdcf38.stl": "../../meshes/link_56.00cdcf38.stl",
   "../../meshes/motor_rotor_57.47405b59.stl": "../../meshes/motor_rotor_57.47405b59.stl",
   "../../meshes/motor_rotor_58.ef05400c.stl": "../../meshes/motor_rotor_58.ef05400c.stl",
@@ -658,7 +658,7 @@
    "type": "pollen",
    "body": 20,
    "geom": 1726,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 14,
    "dofadr": 14
@@ -668,7 +668,7 @@
    "type": "pollen",
    "body": 21,
    "geom": 1727,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 21,
    "dofadr": 20
@@ -678,7 +678,7 @@
    "type": "pollen",
    "body": 22,
    "geom": 1728,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 28,
    "dofadr": 26
@@ -688,7 +688,7 @@
    "type": "pollen",
    "body": 23,
    "geom": 1729,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 35,
    "dofadr": 32
@@ -698,7 +698,7 @@
    "type": "pollen",
    "body": 24,
    "geom": 1730,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 42,
    "dofadr": 38
@@ -708,7 +708,7 @@
    "type": "pollen",
    "body": 25,
    "geom": 1731,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 49,
    "dofadr": 44
@@ -718,7 +718,7 @@
    "type": "pollen",
    "body": 26,
    "geom": 1732,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 56,
    "dofadr": 50
@@ -728,7 +728,7 @@
    "type": "pollen",
    "body": 27,
    "geom": 1733,
-   "radius": 0.03555,
+   "radius": 0.036265,
    "mass": 0.0249,
    "qposadr": 63,
    "dofadr": 56
@@ -739,7 +739,7 @@
    "body": 28,
    "geom": 1734,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 70,
    "dofadr": 62
   },
@@ -749,7 +749,7 @@
    "body": 29,
    "geom": 1735,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 77,
    "dofadr": 68
   },
@@ -759,7 +759,7 @@
    "body": 30,
    "geom": 1736,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 84,
    "dofadr": 74
   },
@@ -769,7 +769,7 @@
    "body": 31,
    "geom": 1737,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 91,
    "dofadr": 80
   },
@@ -779,7 +779,7 @@
    "body": 32,
    "geom": 1738,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 98,
    "dofadr": 86
   },
@@ -789,7 +789,7 @@
    "body": 33,
    "geom": 1739,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 105,
    "dofadr": 92
   },
@@ -799,7 +799,7 @@
    "body": 34,
    "geom": 1740,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 112,
    "dofadr": 98
   },
@@ -809,14 +809,14 @@
    "body": 35,
    "geom": 1741,
    "radius": 0.046,
-   "mass": 0.0413,
+   "mass": 0.04,
    "qposadr": 119,
    "dofadr": 104
   }
  ],
  "ball_mass": {
   "pollen": 0.0249,
-  "nectar": 0.0413
+  "nectar": 0.04
  },
  "geom_sets": {
   "rig": [
@@ -2844,7 +2844,7 @@
    "gap": {
     "actuator": "gap_servo",
     "joint": "gap",
-    "speed": 0.09877777777777778,
+    "speed": 0.09877777777777777,
     "why": "2000-0025-0003 turns a two-dwell cam 90 deg in 0.27 s; dwell stiffness 1e6 N/m ESTIMATE",
     "deadband": 0.0
    }
@@ -2875,7 +2875,7 @@
   "cell": {
    "r": 0.048,
    "floor": -0.204,
-   "rim": 0.019099999999999995,
+   "rim": 0.019100000000000002,
    "origin": [
     0.0,
     -0.07174472031819741,
@@ -2896,7 +2896,7 @@
   },
   "ball_spread": {
    "diameter": [
-    0.0065,
+    0.0053,
     0.02
    ],
    "mass": [
@@ -2928,7 +2928,7 @@
   "bearing_friction": 0.002,
   "tpr": 28,
   "gate_tol": 0.015,
-  "squeeze_pollen_mm": 4.0,
+  "squeeze_pollen_mm": 5.43,
   "squeeze_nectar_mm": 1.75,
   "wrap_deg": 80.0,
   "flare_deg": 28.0,
@@ -2968,7 +2968,7 @@
   "roller_deg": 270.0,
   "roller_gap_mm": 3.0,
   "roller_r_mm": 12.7,
-  "sq_ref_pollen_mm": 2.5,
+  "sq_ref_pollen_mm": 3.93,
   "sq_ref_nectar_mm": 1.46,
   "pulley_pair": 1,
   "axle_above_plate_mm": 105.0,
@@ -2988,23 +2988,23 @@
   "ramp_clear_mm": 6.172,
   "take_s": 1.2,
   "max_s": 1.8,
-  "catch_squeeze_mm": 3.2,
+  "catch_squeeze_mm": 3.915,
   "catch_travel_mm": 12.414,
   "catch_preload_n": 16.831,
   "catch_k_n_per_mm": 0.432,
   "catch_z_mm": -78.887,
   "catch_dy_mm": -4.617,
   "lift_preload_n": 12.37,
-  "lift_squeeze_mm": 4.0,
-  "lift_dz_mm": 0.295,
-  "design_squeeze_pollen_mm": 4.0,
+  "lift_squeeze_mm": 5.43,
+  "lift_dz_mm": -0.0625,
+  "design_squeeze_pollen_mm": 5.43,
   "design_squeeze_nectar_mm": 1.75,
   "R_WHEEL": 0.048,
-  "D_POLLEN": 0.0711,
+  "D_POLLEN": 0.07253,
   "D_NECTAR": 0.092,
   "hood_radius": 0.126675,
   "offset": {
-   "pollen": -0.0015,
+   "pollen": -0.0014999999999999996,
    "nectar": 0.02517
   },
   "mid_axis": [
@@ -3066,9 +3066,9 @@
  },
  "variant": {
   "id": "v9",
-  "label": "v9",
-  "group": null,
-  "describe": ""
+  "label": "v9: sliding round hood + rolling extension",
+  "group": "Design",
+  "describe": "Fixed trough hood slides level for NECTAR on a dead-centre crank; an extension rolls up the same circle for flatter shots; the ball is lifted from the carousel cell and caught by two sprung side wheels geared to the flywheel, then rides a fixed front ramp into the pinch. Everything sits on the ring gear."
  },
  "calibration": "calibration.json"
 }
