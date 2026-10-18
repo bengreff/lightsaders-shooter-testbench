@@ -1,5 +1,12 @@
 [
  {
+  "id": "v12b_lift",
+  "label": "Lightsaders v2 turret + lift feed (v12b)",
+  "group": "Design",
+  "folder": "v12b_lift",
+  "describe": "The v2 robot's turret on its feed: the ball sits in the carousel cell's bowl, the servo crank swings the lift arm in and the 2 in rubber lift wheel rolls it up the Cat Tongue spine into the sprung throat wheel and the flywheel (shooter/v10.py V10Bench on designs/v12b.yaml). Drawn from the v2 code-CAD. No calibration yet: DIRECT mode (wheel rpm and hood angle)."
+ },
+ {
   "id": "v9",
   "label": "v9: sliding round hood + rolling extension",
   "group": "Design",

@@ -7,6 +7,9 @@
 // the feeder brakes when the FLYWHEEL touches the ball. The exit is the ball's state at its LAST contact with the
 // shooter. JAM: not taken by the tread within take_s, still touching after 1.0 s, or leaving under 2 m/s.
 // Older exports (no feeder) inject at the hood's mouth or on the feed column, moving.
+// The Lightsaders v2 feed (manifest.controller.v10, shooter/v10.py V10Bench): the ball is seated in the carousel cell's
+// bowl, the servo crank swings the lift arm's stop from retracted to engaged (V10Lift), the lift motor's electrical model
+// drives the rubber lift wheel, which rolls the ball up the spine into the throat wheel and the flywheel.
 
 import { Hub, Motor } from './hub.js';
 import { Feeder } from './feeder.js';
@@ -15,6 +18,10 @@ import * as DS from './design.js';
 import { NumpyRNG } from './nprandom.js';
 
 const deg = (r) => r * 180 / Math.PI, rad = (d) => d * Math.PI / 180;
+/** Quaternions (w, x, y, z), MuJoCo's order: product a b, and v rotated by q. */
+const qmul = (a, b) => [a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2],
+  a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]];
+const qrot = (q, v) => { const p = qmul(qmul(q, [0, v[0], v[1], v[2]]), [q[0], -q[1], -q[2], -q[3]]); return [p[1], p[2], p[3]]; };
 
 /** bench.py BALL_SPREAD (older exports carry none in manifest.controller.ball_spread): per property (sigma, bound) as
  *  fractions of the nominal value; a truncated normal per shot. */
@@ -30,6 +37,12 @@ export function rng(seed) {
   let a = seed >>> 0;
   const next = () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   return { uniform: (lo, hi) => lo + (hi - lo) * next() };
+}
+
+/** numpy's Generator.uniform(lo, hi) on default_rng(seed): lo + (hi - lo) * random(). */
+export function numpyUniform(seed) {
+  const r = new NumpyRNG(seed);
+  return { uniform: (lo, hi) => lo + (hi - lo) * r.random() };
 }
 
 /** Servo slew at the vendor's no-load speed toward the target; a servo with a deadband ignores a target change smaller
@@ -73,13 +86,51 @@ export class LiftServo {
   }
 }
 
+/** The v2 lift (shooter/v10.py V10Bench lift_step + set_arm_stop): the servo crank carries the arm's closing stop from
+ *  retracted (q_ret) to engaged (0) as a cosine between its dead centres in t_engage; the flexure presses the arm onto
+ *  that stop (the joint's spring, preloaded by `pre`). The lift motor (Yellow Jacket, 1:1 to the wheel) on the battery
+ *  the flywheel motor sags: i = (u V - Ke w) / R, torque Kt i - T_fric sign(w) on the rotor joint. */
+export class V10Lift {
+  constructor(spec, shooter) { this.V = spec; this.B = shooter; this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0; }
+  onLoad(sim) {
+    const V = this.V;
+    this.jid = sim.jointId(V.arm_joint); this.j_larm = sim.qadr(V.arm_joint); this.v_larm = sim.vadr(V.arm_joint);
+    this.j_lw = sim.qadr(V.wheel_joint); this.v_lw = sim.vadr(V.wheel_joint);
+    this.j_rot = sim.qadr(V.motor.joint); this.v_rot = sim.vadr(V.motor.joint); this.aid = sim.actuatorId(V.motor.actuator);
+    this.range0 = sim.m.jnt_range[2 * this.jid]; this.spring0 = sim.m.qpos_spring[this.j_larm];    // as compiled (engaged)
+    this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0;
+  }
+  /** set_arm_stop: the crank's link puts the arm's closing stop at q (rad); the flexure presses the arm onto it. */
+  setArmStop(sim, q) {
+    const m = sim.m; m.jnt_range[2 * this.jid] = q; m.qpos_spring[this.j_larm] = q - this.V.lift2.pre; this.arm_stop = q;
+  }
+  /** Back to the compiled stop (engaged), e.g. after a reset. */
+  restore(sim) {
+    const m = sim.m; m.jnt_range[2 * this.jid] = this.range0; m.qpos_spring[this.j_larm] = this.spring0;
+    this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0;
+  }
+  preStep(sim) {
+    const V = this.V, L2 = V.lift2;
+    if (L2 && L2.mode === 'servo' && this.engage_t0 !== null) {       // the crank between its dead centres
+      const f = Math.min(1.0, (sim.d.time - this.engage_t0) / L2.t_engage);
+      this.setArmStop(sim, L2.q_ret * 0.5 * (1.0 + Math.cos(Math.PI * f)));
+      if (f >= 1.0) this.engage_t0 = null;
+    }
+    const M = V.motor, om = sim.qvel[this.v_rot], band = 1e-6;          // = bench.py FRICTION_BAND
+    const i = (this.u * this.B.v_batt - M.Ke * om) / M.R; this.current = i;
+    sim.ctrlv[this.aid] = M.Kt * i - M.T_fric * (om > band ? 1.0 : om < -band ? -1.0 : 0.0);
+  }
+}
+
 export class Shooter {
   /** manifest: a variant's manifest.json. opts: {seed, jitter (true: the Python bench's arrival jitter),
    *  ballSpread (null | BALL_SPREAD keys to vary per shot: bench.py set_ball_spread)}. */
   constructor(sim, manifest, opts = {}) {
     this.sim = sim; this.M = manifest; this.D = manifest.design;
     this.jitter = opts.jitter ?? false;
-    this.rand = rng(opts.seed ?? 0);
+    // arrival jitter: mulberry32 (not numpy's stream), except on the v2 feed, whose cell_start draws are numpy's
+    // default_rng(seed).uniform, draw for draw (V10Bench.rng), so a seeded jittered run matches the Python bench shot for shot
+    this.rand = manifest.controller.v10 ? numpyUniform(opts.seed ?? 0) : rng(opts.seed ?? 0);
     // ball-to-ball variation: numpy's default_rng(seed + 7919) stream, draw for draw with bench.py's spread_rng
     this.spreadRng = new NumpyRNG((opts.seed ?? 0) + 7919);
     this.ballSpread = null; this.lastBallDraw = null; this._ballNominal = null;
@@ -89,7 +140,7 @@ export class Shooter {
     this.motor = C.motor ? new Motor(C.motor, this.hub) : null;
     this.feeder = C.feeder ? new Feeder({ ...C.feeder, battery_v: C.motor?.battery_v ?? 12 }, this.motor) : null;
     this.servos = new Servos(C.servos);
-    this.lift = C.lift ? new LiftServo(C.lift) : null;
+    this.lift = C.lift ? new LiftServo(C.lift) : C.v10 ? new V10Lift(C.v10, this) : null;
     this.air = new Air(manifest.air, manifest.balls);
     this.trackers = new Set();
     this.onShot = null;                  // callback(result) when a tracker finishes
@@ -100,7 +151,10 @@ export class Shooter {
   }
 
   /** Take this shooter's hooks out of the sim (before loading another variant into the same Sim). */
-  detach() { for (const h of this.hooks) this.sim.removeHook(h); }
+  detach() {
+    for (const h of this.hooks) this.sim.removeHook(h);
+    if (this._scratch) { this._scratch.delete(); this._scratch = null; }
+  }
 
   _init() {
     const sim = this.sim, M = this.M;
@@ -130,11 +184,39 @@ export class Shooter {
       if (this.lift) this.lift.u = 0;
       sim.forward();
     }
+    const V10 = this.M.controller.v10;
+    if (V10) {                                      // V10Bench.__init__: the robot under the turret, the spine's friction
+      this.b_robot = sim.m.body_mocapid[sim.bodyId(V10.robot)];
+      sim.mocap_pos.set([V10.origin[0], V10.origin[1], V10.origin[2] + this.D.height_m], 3 * this.b_robot);
+      if (V10.spine_mu !== null && V10.spine_mu !== undefined) {
+        const m = sim.m, p1 = m.pair_geom1, p2 = m.pair_geom2;
+        for (const gn of V10.spine_geoms) {
+          const gid = sim.geomId(gn);
+          for (let i = 0; i < m.npair; i++) if (p1[i] === gid || p2[i] === gid) { m.pair_friction[5 * i] = V10.spine_mu; m.pair_friction[5 * i + 1] = V10.spine_mu; }
+          m.geom_friction[3 * gid] = V10.spine_mu;
+        }
+      }
+      sim.forward();
+    }
     this.trackers.clear();
   }
 
   /** Back to t = 0 (mj_resetData) with the controllers re-initialised; every ball back to its nominal properties. */
-  reset() { this.sim.reset(); this._restoreNominal(); this._init(); }
+  reset() {
+    this.sim.reset();
+    if (this.lift && this.lift.restore) this.lift.restore(this.sim);
+    this._restoreNominal(); if (this.M.controller.v10?.mass_fix) this._setConst();
+    this._init();
+  }
+
+  /** v12b+ mass_fix (V10Bench.draw_ball): re-derive the model's constants after a ball draw (mj_setConst) so the mass and
+   *  inertia draw take effect; on a scratch MjData, because mj_setConst resets the data it is given to qpos0. */
+  _setConst() {
+    const s = this.sim;
+    if (!this._scratch) this._scratch = new s.mj.MjData(s.m);
+    s.mj.mj_setConst(s.m, this._scratch);
+    s.views();                                      // a new MjData can grow the heap: re-fetch the live views
+  }
 
   // ------------------------------------------------------------------ ball-to-ball variation (bench.py)
   /** Each ball's nominal model values (bench.py __init__ _ball_nominal), read once from the freshly loaded model. */
@@ -162,6 +244,7 @@ export class Shooter {
       dr[k] = this.ballSpread && this.ballSpread.includes(k) ? truncNormal(this.spreadRng, SP[k][0], SP[k][1]) : 0.0;
     this._setBall(ball, dr);
     this.lastBallDraw = { ...dr };
+    if (this.M.controller.v10?.mass_fix) this._setConst();
     return this.lastBallDraw;
   }
 
@@ -225,6 +308,20 @@ export class Shooter {
     const arm = s.qpos[this.j_arm], gap = s.qpos[this.j_gap];
     const quatX = (a) => [Math.cos(a / 2), Math.sin(a / 2), 0, 0];
     const K = this.M.mocap_kin || {};
+    if (K.v2lift) {   // the v2 lift's servo crank and its link, from the crank's stop angle (tools/v2_visuals.py table)
+      const T = K.v2lift, q = this.lift ? this.lift.arm_stop : 0, Q = T.q, n = Q.length;
+      let k = 0; while (k < n - 2 && q > Q[k + 1]) k++;
+      const f = Math.min(1, Math.max(0, (q - Q[k]) / (Q[k + 1] - Q[k])));
+      const rb = m.body_mocapid[s.bodyId(T.robot)], rp = s.mocap_pos.subarray(3 * rb, 3 * rb + 3), rq = Array.from(s.mocap_quat.subarray(4 * rb, 4 * rb + 4));
+      for (const [name, tab] of [['v2_crank', T.crank], ['v2_link', T.link]]) {
+        if (!tab || !s.names.body.map.has(name)) continue;
+        const a = tab[k].map((x, i) => x + f * (tab[k + 1][i] - x));
+        const t = qrot(rq, [a[1], a[2], a[3]]), b = m.body_mocapid[s.bodyId(name)];
+        s.mocap_pos.set([rp[0] + t[0], rp[1] + t[1], rp[2] + t[2]], 3 * b);
+        s.mocap_quat.set(qmul(rq, [Math.cos(a[0] / 2), Math.sin(a[0] / 2), 0, 0]), 4 * b);
+      }
+      return;
+    }
     if (K.v9) {   // render.py v9_mocaps: pinion on the sliding hood, the slide's crank-slider (exact kinematics)
       const quatZ = (a) => [Math.cos(a / 2), 0, 0, Math.sin(a / 2)];
       const set = (name, pos, q) => { const b = m.body_mocapid[s.bodyId(name)]; s.mocap_pos.set(pos, 3 * b); s.mocap_quat.set(q, 4 * b); };
@@ -295,6 +392,7 @@ export class Shooter {
     this.drawBall(ball);
     const C = this.M.controller;
     if (C.feeder) return this.stage(ball);
+    if (C.v10) return this.v10CellStart(ball);
     if (C.cell) return this.cellStart(ball);
     const h = this.D.height_m;
     const { pos, vdir } = C.inject === 'feed_column' ? DS.feedStart(this.D, ball.type)
@@ -339,6 +437,50 @@ export class Shooter {
     const w = jit ? [U(-3, 3), U(-3, 3), U(-3, 3)] : [0, 0, 0];
     this.place(ball, [o[0] + c * xb - sn * yb, o[1] + sn * xb + c * yb, zb + h], vel, w);
     if (this.lift) this.lift.u = jit ? U(0.9, 1.0) : 1.0;
+    return this.overlap(ball);
+  }
+
+  /** The v2 feed (shooter/v10.py V10Bench.cell_start, the same draws in the same order): the robot at a random angle
+   *  under the turret, the ball seated in the cell's bowl (a quarter of the 1 mm / +-2 mm offsets, the bowl centres it),
+   *  a small indexing roll, the arm retracted and its crank starting to engage, the lift motor at 90-100 % duty. Without
+   *  jitter: robot angle 0, the ball centred, still, full duty. */
+  v10CellStart(ball) {
+    const V = this.M.controller.v10, s = this.sim, h = this.D.height_m, jit = this.jitter, L = this.lift;
+    const r = s.m.geom_size[3 * ball.geom];          // the drawn ball's radius
+    const o0 = [V.origin[0], V.origin[1], V.origin[2] + h];
+    this.balls.forEach((bb, k) => {                 // a ball left in the robot (a stalled shot) is parked
+      if (bb === ball) return;
+      const X = s.xpos, q = 3 * bb.body;
+      if (Math.hypot(X[q] - o0[0], X[q + 1] - o0[1], X[q + 2] - o0[2]) < 0.30 && X[q + 2] < h + 0.1) this.park(bb, k);
+    });
+    const U = (lo, hi) => (jit ? this.rand.uniform(lo, hi) : (lo !== -hi ? 0.5 * (lo + hi) : 0.0));
+    let phi = jit ? this.rand.uniform(0.0, 2 * Math.PI) : 0.0;
+    if (this.phiFixed !== undefined && this.phiFixed !== null) phi = this.phiFixed;
+    const off = jit ? U(0.0, 0.001) : 0.0;
+    let yb = V.y_spine + r + off;                  // off the spine (robot y, from the turret axis)
+    let xb = U(-0.002, 0.002);                     // across
+    let zb = V.floor + r + 0.0005;
+    const c = Math.cos(phi), sn = Math.sin(phi);
+    s.mocap_quat.set([Math.cos(phi / 2), 0.0, 0.0, Math.sin(phi / 2)], 4 * this.b_robot);
+    if (V.bowl) {                                   // seated in the cell's bowl (it centres the ball)
+      const bw = V.bowl;
+      yb = (bw.y - V.yT_mm) / 1000.0 + 0.25 * (off - 0.0005);
+      xb *= 0.25;
+      zb = (bw.bottom_z - V.zfly_mm) / 1000.0 + r + 0.0003;
+    }
+    const L2 = V.lift2; let ca = 1.0;
+    if (L2) {                                       // the arm retracted; its crank engages it now
+      ca = -L2.sign;
+      if (L2.mode === 'servo') { L.setArmStop(s, L2.q_ret); L.engage_t0 = s.time; }
+      s.qpos[L.j_larm] = L2.q_ret; s.qvel[L.v_larm] = 0.0;
+    }
+    s.qvel[L.v_lw] = 0.0; s.qvel[L.v_rot] = 0.0;
+    s.qpos[L.j_rot] = s.qpos[L.j_lw] + ca * s.qpos[L.j_larm];      // the belts' tie
+    const o = V.origin;
+    const pos = [o[0] + c * xb - sn * yb, o[1] + sn * xb + c * yb, zb + h];
+    const vel = [U(-0.03, 0.03), U(-0.03, 0.03), 0.0], w = [U(-3, 3), U(-3, 3), U(-3, 3)];
+    this.place(ball, pos, vel, w);
+    L.u = jit ? U(0.9, 1.0) : 1.0;
     return this.overlap(ball);
   }
 

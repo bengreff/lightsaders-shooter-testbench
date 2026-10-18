@@ -353,7 +353,7 @@ function liveUi() {
   $('l-rpm').textContent = `${fmt(B.wheelRpm(), 0).padStart(5)} / ${fmt(B.targetRpm(), 0)} rpm`;
   $('l-hood').textContent = `${sgn(B.armDeg(), 2).padStart(6)} / ${sgn(B.armTargetDeg(), 2)} deg`;
   $('l-gap').textContent = `${sgn(B.gapMm(), 2).padStart(6)} / ${sgn(B.gapTargetMm(), 2)} mm`;
-  $('l-motor').textContent = B.motor ? `${fmt(B.current, 2)} A, battery ${fmt(B.v_batt, 2)} V` : '-';
+  $('l-motor').textContent = B.motor ? `${fmt(B.current, 2)} A, battery ${fmt(B.v_batt, 2)} V${B.M.controller.v10 ? `, lift ${fmt(B.lift.current, 2)} A` : ''}` : '-';
   const st = s.paused ? 'PAUSED' : app.tracker ? 'FIRING' : B.settled() ? 'READY' : 'SETTLING';
   const badge = $('l-state'); badge.textContent = st; badge.className = 'badge ' + st.toLowerCase();
   $('l-queue').textContent = `queue ${app.queue}${s.auto ? ' +auto' : ''}`;
@@ -473,8 +473,8 @@ function endRecal() {
 function setView(i) {
   app.s.view = ((i % VIEWS.length) + VIEWS.length) % VIEWS.length;
   const [, az, el, dist, look] = VIEWS[app.s.view];
-  const h = app.manifest ? app.manifest.design.height_m : 0.3;
-  app.view.setView({ az, el, dist, lookat: look || [0, -0.03, h - 0.04] });
+  const h = app.manifest ? app.manifest.design.height_m : 0.3, V = app.manifest?.view;   // a variant may aim the presets (the v2 feed: between cell and wheel)
+  app.view.setView({ az, el, dist: look ? dist : dist * (V?.dist_scale ?? 1), lookat: look || V?.lookat || [0, -0.03, h - 0.04] });
   syncUi();
 }
 
