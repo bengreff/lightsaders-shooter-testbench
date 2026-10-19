@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shooter Testbench</title>
+<title>Turret Contact Bench</title>
 <link rel="icon" href="data:,">
 <script type="importmap">
 {
@@ -21,104 +21,66 @@
     <div id="view"></div>
     <div id="hint" class="overlay">Pick a ball, press FIRE. Drag to orbit, scroll to zoom.</div>
     <div class="overlay top-left" id="views"></div>
-    <div class="overlay top-right"><div id="vtitle" title="The variant being simulated"></div><div id="perf" class="mono dim" title="Frames per second, and how fast the simulation runs compared with real time"></div></div>
+    <div class="overlay top-right"><div id="perf" class="mono dim" title="Frames per second, and simulated time per real second"></div></div>
     <div class="overlay bottom-left mono dim" id="status">starting...</div>
     <div id="loading"><div class="spinner"></div><div id="loadmsg">Loading MuJoCo...</div></div>
   </main>
 
   <aside id="panel">
     <header>
-      <div><h1>Prototype shooter</h1><div class="dim small" id="design"></div></div>
-      <button id="aboutBtn" class="ghost" title="What the simulation models and what is not verified">How it works</button>
+      <div><h1>Lightsaders turret</h1><div class="dim small" id="design">contact bench: lift wheel, cell, bore ring, hood, flywheel</div></div>
     </header>
-    <label class="field" title="Which version of the shooter design to simulate">Variant <select id="variant" title="Which version of the shooter design to simulate"></select></label>
-    <div id="vdesc" class="dim small sub"></div>
 
     <section>
-      <h2>Ball</h2><div class="sub">which ball is loaded</div>
-      <div class="seg two"><button data-ball="pollen" class="pollen" title="Load POLLEN (the small ball)">POLLEN <kbd>1</kbd></button><button data-ball="nectar" class="nectar" title="Load NECTAR (the large ball)">NECTAR <kbd>2</kbd></button></div>
+      <h2>Ball</h2><div class="sub">the hood is placed forward (POLLEN) or 25.5 mm back (NECTAR)</div>
+      <div class="seg two"><button data-ball="pollen" class="pollen" title="POLLEN: the hood forward">POLLEN <kbd>1</kbd></button><button data-ball="nectar" class="nectar" title="NECTAR: the hood slides back 25.5 mm">NECTAR <kbd>2</kbd></button></div>
     </section>
 
     <section>
       <h2>Shot</h2><div class="sub">what you ask for</div>
-      <div class="seg two small-btn"><button data-mode="target" title="TARGET: you choose exit speed and angle; the app solves wheel rpm and hood angle (key M)">TARGET speed + angle</button><button data-mode="direct" title="DIRECT: you set wheel rpm and hood angle yourself; the app predicts the shot (key M)">DIRECT rpm + hood</button></div>
-      <div id="sliders-target">
-        <div class="slider" data-key="speed" title="Ball speed wanted as it leaves the hood" data-min="3.5" data-max="9.5" data-step="0.05" data-unit="m/s" data-fmt="2">Target exit speed</div>
-        <div class="slider" data-key="elev" title="Launch angle wanted above horizontal as the ball leaves the hood" data-min="50" data-max="88" data-step="0.5" data-unit="deg" data-fmt="1">Target exit angle</div>
-      </div>
-      <div id="sliders-direct">
-        <div class="slider" data-key="rpm" title="Flywheel speed the motor controller holds" data-min="1600" data-max="4400" data-step="25" data-unit="rpm" data-fmt="0">Flywheel speed</div>
-        <div class="slider" data-key="arm" title="Hood angle from its middle position; higher means a steeper shot" data-min="-20" data-max="20" data-step="0.25" data-unit="deg" data-fmt="2" data-sign="1">Hood angle</div>
-      </div>
-      <div id="solved" class="small mono" title="The wheel speed and hood angle used for this shot, or the shot the calibration predicts"></div>
+      <div class="seg two small-btn"><button data-mode="target" title="TARGET: you choose exit speed and angle; the calibration solves wheel rpm and extension (key M)">TARGET speed + angle</button><button data-mode="direct" title="DIRECT: wheel rpm and extension angle yourself (key M)">DIRECT rpm + extension</button></div>
+      <div id="sliders-target"></div>
+      <div id="sliders-direct"></div>
+            <div id="solved" class="small mono"></div>
       <div class="actions">
-        <button id="fire" class="primary" title="Fire one ball as soon as the shooter is ready">FIRE <kbd>space</kbd></button>
-        <button id="burst" title="Fire the burst size of balls, each as soon as the shooter is ready again">BURST <span id="burstN">x6</span> <kbd>B</kbd></button>
-        <button id="auto" title="Keep firing until STOP">AUTO <kbd>A</kbd></button>
-        <button id="stop" title="Cancel queued shots and AUTO">STOP</button>
+        <button id="fire" class="primary" title="Put one ball in the cell and fire it when the turret is ready">FIRE <kbd>space</kbd></button>
+        <button id="burst" title="Load all 4 pockets and fire them as fast as the feed allows">BURST x4 <kbd>B</kbd></button>
+        <button id="reset" title="Back to the start">RESET <kbd>R</kbd></button>
       </div>
+      <label class="check small"><input type="checkbox" id="mixed"> burst alternates POLLEN / NECTAR</label>
     </section>
 
     <section>
-      <h2>Live</h2><div class="sub">what the shooter is doing now</div>
+      <h2>Live</h2><div class="sub">what the turret is doing now</div>
       <div class="card live">
-        <div class="kv" title="Flywheel speed now / target, rpm"><span>wheel</span><b class="mono" id="l-rpm"></b></div>
-        <div class="kv" title="Hood angle now / target, deg"><span>hood</span><b class="mono" id="l-hood"></b></div>
-        <div class="kv" title="Hood gap setting now / target, mm (set by the ball type and its squeeze)"><span>gap cam</span><b class="mono" id="l-gap"></b></div>
-        <div class="kv" title="Flywheel motor current and battery voltage now"><span>motor</span><b class="mono" id="l-motor"></b></div>
-        <div class="badge" id="l-state" title="READY: wheel at speed and hood in place, a shot can fire; SETTLING: still getting there; FIRING: a ball is in the shooter">-</div>
-        <div class="queue mono dim small" id="l-queue" title="Shots waiting to fire"></div>
+        <div class="kv" title="Flywheel speed now / target"><span>flywheel</span><b class="mono" id="l-rpm"></b></div>
+        <div class="kv" title="Hood slide: 0 = POLLEN, 25.5 = NECTAR"><span>hood slide</span><b class="mono" id="l-gap"></b></div>
+        <div class="kv" title="Extension comb angle (+ = flatter shots)"><span>extension</span><b class="mono" id="l-ext"></b></div>
+        <div class="kv" title="Lift arm angle (0 = rest) and whether the hold has it"><span>lift arm</span><b class="mono" id="l-lift"></b></div>
+        <div class="kv" title="Flywheel motor current and battery voltage"><span>motor</span><b class="mono" id="l-motor"></b></div>
+        <div class="badge" id="l-state">-</div>
       </div>
-      <canvas id="charts" title="Last 3 s: flywheel rpm (grey line = target), motor current, battery voltage"></canvas>
+      <canvas id="charts" title="Last 3 s: flywheel rpm (grey = target), motor current"></canvas>
     </section>
 
     <section>
-      <h2>Last shot</h2><div class="sub">measured as the ball left the hood</div>
+      <h2>Last shot</h2><div class="sub">as the ball left the hood (turret frame)</div>
       <div class="card last">
-        <div class="big"><div><span class="dim small">exit speed</span><b id="s-speed" title="Ball speed as it left the hood, m/s">-</b><span class="unit">m/s</span><div class="err mono" id="s-verr" title="Speed error against the target (green small, red large)"></div></div>
-          <div><span class="dim small">exit angle</span><b id="s-elev" title="Launch angle above horizontal as it left the hood, deg">-</b><span class="unit">deg</span><div class="err mono" id="s-eerr" title="Angle error against the target (green small, red large)"></div></div></div>
+        <div class="big"><div><span class="dim small">exit speed</span><b id="s-speed">-</b><span class="unit">m/s</span><div class="err mono" id="s-verr"></div></div>
+          <div><span class="dim small">exit angle</span><b id="s-elev">-</b><span class="unit">deg</span><div class="err mono" id="s-eerr"></div></div></div>
         <div class="grid mono small" id="s-grid"></div>
       </div>
+      <table class="shots mono small" id="shots"><thead><tr><th>#</th><th>ball</th><th>rpm</th><th>ext</th><th>m/s</th><th>deg</th><th>side</th><th>t feed</th></tr></thead><tbody></tbody></table>
     </section>
 
     <section>
-      <h2>Shot log</h2><div class="sub">every shot, newest first</div>
-      <div class="tablewrap"><table id="log"><thead><tr><th title="Shot number">#</th><th title="Ball type">ball</th><th title="Target exit speed, m/s">v tgt</th><th title="Measured exit speed, m/s">v exit</th><th title="Speed error, %">err</th><th title="Target exit angle, deg">a tgt</th><th title="Measured exit angle, deg">a exit</th><th title="Angle error, deg">err</th><th title="Time since the previous shot in a burst, s">gap s</th><th title="Recovery: time from the ball leaving until the shooter was ready again, s">rec s</th></tr></thead><tbody></tbody></table></div>
+      <h2>View</h2>
+      <label class="check small"><input type="checkbox" id="collision"> show collision shapes</label>
+      <label class="check small"><input type="checkbox" id="slowmo"> slow motion (x0.1)</label>
+      <div class="dim small sub" id="notes"></div>
     </section>
-
-    <section>
-      <h2>Session stats</h2><div class="sub">accuracy against the target, this variant</div>
-      <div id="stats" class="mono small" title="Per ball: shots launched, speed and angle error (rms and worst), firing rate"></div>
-      <div class="row"><button id="resetStats" class="small-btn" title="Clear the shot log and stats">Reset stats <kbd>R</kbd></button></div>
-    </section>
-
-    <section>
-      <h2>Settings</h2><div class="sub">how the shooter is set up</div>
-      <div class="slider" data-key="sq_pollen" title="Squeeze: how much the hood presses POLLEN into the flywheel (gap cam setting)" data-min="0" data-max="6" data-step="0.1" data-unit="mm" data-fmt="1">POLLEN squeeze (gap setting)</div>
-      <div class="slider" data-key="sq_nectar" title="Squeeze: how much the hood presses NECTAR into the flywheel (gap cam setting)" data-min="0" data-max="6" data-step="0.1" data-unit="mm" data-fmt="1">NECTAR squeeze (gap setting)</div>
-      <div class="slider" data-key="feeder_u" title="Power to the feeder rollers that push the ball into the flywheel (1 = full)" data-min="0.1" data-max="1" data-step="0.05" data-unit="duty" data-fmt="2">Feeder duty</div>
-      <div class="slider" data-key="burst" title="How many balls BURST fires" data-min="1" data-max="12" data-step="1" data-unit="balls" data-fmt="0">Burst size</div>
-      <div class="slider" data-key="slow" title="Slow the simulation down this many times to watch a shot" data-min="1" data-max="40" data-step="1" data-unit="x" data-fmt="0">Slow motion</div>
-      <label class="check" title="Vary each ball's starting spot slightly, as real feeding does"><input type="checkbox" id="jitter" checked> arrival jitter (as the Python bench)</label>
-      <label class="check" title="Every shot gets a fresh ball: diameter, mass, stiffness and bounce drawn around nominal, as moulded balls vary (the Python bench's ball variation, the same draws)"><input type="checkbox" id="vary" checked> ball-to-ball variation (as the Python bench)</label>
-      <label class="check" title="Show the simple shapes the physics actually uses for contact"><input type="checkbox" id="collision"> show collision shapes</label>
-      <div class="row"><button id="pause" class="small-btn" title="Freeze or resume the simulation">Pause <kbd>P</kbd></button><button id="resetSim" class="small-btn" title="Restart the simulation from rest (keeps the shot log)">Reset simulation</button></div>
-    </section>
-
-    <section>
-      <h2>Calibration</h2><div class="sub">maps wheel rpm + hood angle to exit speed + angle</div>
-      <div id="calinfo" class="small" title="Where the calibration used for TARGET mode comes from"></div>
-      <div class="progress" id="calprog" hidden><div></div></div>
-      <div class="row"><button id="recal" class="small-btn" title="Measure a new calibration with the current squeeze and feeder settings (about 1 min)">Recalibrate this variant</button><button id="recalStop" class="small-btn" hidden title="Stop the recalibration">Stop</button>
-        <button id="calDownload" class="small-btn" hidden title="Save the browser-measured calibration as a JSON file">Download</button></div>
-    </section>
-
-    <footer class="mono dim small" id="footer"></footer>
   </aside>
 </div>
-
-<div id="about" hidden><div class="sheet"><button class="ghost close" id="aboutClose">Close</button><div id="aboutBody"></div></div></div>
-
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

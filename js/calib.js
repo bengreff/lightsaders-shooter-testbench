@@ -8,7 +8,7 @@
 //             a grid measured in the browser (Recalibrate), where there is no scipy fit. NOT identical to Python's
 //             smoothing spline on the same data: on v4_final's grid, within 0.28 % / 0.10 deg below 4000 rpm, up to
 //             1.3 % between the 4000 and 4400 rpm columns where the wheel saturates (README).
-// Plus measureGrid(): calibrate.py measure() in JS, for the in-browser recalibration.
+// fitGrid(): the grid means of a measured grid (tools/turret_calibrate.mjs writes one).
 
 export const RPMS = [1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3700, 4000, 4400];
 export const ARMS_STEP = 4.0;
@@ -142,35 +142,6 @@ export class CalMap {
     const [v0, e0] = this.predict(bt, x0, x1, sq);
     return [x0, x1, Math.abs(v0 / speed - 1) < 0.005 && Math.abs(e0 - elev) < 0.25];
   }
-}
-
-// ------------------------------------------------------------------ measuring in the browser (calibrate.py measure)
-/** Fire each ball over the grid (arm -T..T step 4 x RPMS, `per` shots per point, snake order), settled, with the
- *  arrival jitter on. shooter: a Shooter on its own Sim (the caller's live scene is not touched). onProgress(i, n).
- *  Async: yields to the event loop every shot so a page or worker stays responsive. -> calibration object ('interp'). */
-export async function measureGrid(shooter, onProgress = () => {}, per = 2, rpms = RPMS, shouldStop = () => false) {
-  const B = shooter, T = B.D.angle_travel_deg;
-  const arms = []; for (let k = 0; -T + k * ARMS_STEP <= T + 1e-9; k++) arms.push(-T + k * ARMS_STEP);   // np.arange(-T, T, 4)
-  const n = 2 * rpms.length * arms.length * per; let i = 0;
-  const rows = [];
-  B.setBall('pollen'); B.setAngle(arms[0]); B.spinUp(rpms[0]);
-  for (const bt of ['pollen', 'nectar']) {
-    B.setBall(bt);
-    for (let ri = 0; ri < rpms.length; ri++) {
-      B.setRpm(rpms[ri]);
-      for (const a of (ri % 2 === 0 ? arms : [...arms].reverse())) {
-        B.setAngle(a);
-        for (let k = 0; k < per; k++) {
-          if (shouldStop()) return null;
-          B.waitReady(); const s = B.fire(bt); B.parkAllFlown();
-          rows.push({ type: bt, arm: a, rpm: rpms[ri], jam: s.jam, speed: s.speed, elevation: s.elevation });
-          onProgress(++i, n);
-          await new Promise((r) => setTimeout(r, 0));
-        }
-      }
-    }
-  }
-  return fitGrid(rows, T, rpms);
 }
 
 /** Grid means per ball (calibrate.py fit's grid; jams left out). */
