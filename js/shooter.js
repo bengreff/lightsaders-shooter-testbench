@@ -93,13 +93,18 @@ export class LiftServo {
  *  that stop (the joint's spring, preloaded by `pre`). The lift motor (Yellow Jacket, 1:1 to the wheel) on the battery
  *  the flywheel motor sags: i = (u V - Ke w) / R, torque Kt i - T_fric sign(w) on the rotor joint. */
 export class V10Lift {
-  constructor(spec, shooter) { this.V = spec; this.B = shooter; this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0; }
+  constructor(spec, shooter) { this.V = spec; this.B = shooter; this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0; this.press_n = 0; }
   onLoad(sim) {
     const V = this.V;
     this.jid = sim.jointId(V.arm_joint); this.j_larm = sim.qadr(V.arm_joint); this.v_larm = sim.vadr(V.arm_joint);
     this.j_lw = sim.qadr(V.wheel_joint); this.v_lw = sim.vadr(V.wheel_joint);
     this.j_rot = sim.qadr(V.motor.joint); this.v_rot = sim.vadr(V.motor.joint); this.aid = sim.actuatorId(V.motor.actuator);
     this.range0 = sim.m.jnt_range[2 * this.jid]; this.spring0 = sim.m.qpos_spring[this.j_larm];    // as compiled (engaged)
+    // catch lift (9b): the motor's torque grounded (no reaction on the arm), a constant extra press down at the wheel, the
+    // catch bracket drawn in / out
+    this.gid = V.motor.ground_actuator ? sim.actuatorId(V.motor.ground_actuator) : -1;
+    this.b_wheel = V.press_body ? sim.bodyId(V.press_body) : -1;
+    this.j_catch = V.catch_joint ? sim.qadr(V.catch_joint) : -1; this.v_catch = V.catch_joint ? sim.vadr(V.catch_joint) : -1;
     this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0; this.caught = true;
   }
   /** set_arm_stop: the crank's link puts the arm's closing stop at q (rad); the flexure presses the arm onto it. */
@@ -123,7 +128,11 @@ export class V10Lift {
     }
     const M = V.motor, om = sim.qvel[this.v_rot], band = 1e-6;          // = bench.py FRICTION_BAND
     const i = (this.u * this.B.v_batt - M.Ke * om) / M.R; this.current = i;
-    sim.ctrlv[this.aid] = M.Kt * i - M.T_fric * (om > band ? 1.0 : om < -band ? -1.0 : 0.0);
+    const tq = M.Kt * i - M.T_fric * (om > band ? 1.0 : om < -band ? -1.0 : 0.0);
+    sim.ctrlv[this.aid] = tq;
+    if (this.gid >= 0) sim.ctrlv[this.gid] = tq;                      // grounded motor: the arm feels none of it
+    if (this.b_wheel >= 0) sim.xfrc[6 * this.b_wheel + 2] = -this.press_n;
+    if (this.j_catch >= 0) { sim.qpos[this.j_catch] = this.caught ? 0 : V.catch_travel; sim.qvel[this.v_catch] = 0; }
   }
 }
 

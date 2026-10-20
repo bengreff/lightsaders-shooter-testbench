@@ -22,7 +22,7 @@ const app = window.app = {
   mj: null, sim: null, shooter: null, view: null, manifest: null, variant: null, variants: [], base: null,
   map: null, maps: {},               // the calibration in use, and browser recalibrations per variant id
   s: { ball: 'pollen', mode: 'target', speed: 6.0, elev: 72.5, rpm: 2600, arm: 0, sq_pollen: 2.4, sq_nectar: 1.0,
-       feeder_u: 1.0, burst: 6, slow: 1, auto: false, paused: false, view: 0, jitter: true, vary: true, collision: false },
+       feeder_u: 1.0, lift_n: 1.0, burst: 6, slow: 1, auto: false, paused: false, view: 0, jitter: true, vary: true, collision: false },
   queue: 0, queueActive: false, lastFeed: null, tracker: null, recov: null, shots: [], cmd: [0, 2600, true],
   achieved: 0, fps: 60,
   prof: { phys: 0, draw: 0, frames: 0, steps: 0 },   // ms per frame accumulators (app.prof; reset by hand)
@@ -93,6 +93,7 @@ async function loadVariant(id) {
   if (fixedAngle) app.s.arm = 0;
   if (!app._sqInit) { app.s.sq_pollen = D.squeeze_pollen_mm; app.s.sq_nectar = D.squeeze_nectar_mm; app.s.feeder_u = data.manifest.controller.feeder?.u ?? 1; app._sqInit = true; }
   document.querySelector('.slider[data-key="feeder_u"]').style.display = data.manifest.controller.feeder ? '' : 'none';
+  document.querySelector('.slider[data-key="lift_n"]').style.display = data.manifest.controller.v10?.press_body ? '' : 'none';
   app.tracker = null; app.queue = 0; app.recov = null; app.strip.clear();
   app._cmdKey = null; apply();
   setView(app.s.view);
@@ -155,11 +156,15 @@ function apply() {
   B.setBall(s.ball, s[`sq_${s.ball}`]);
   B.setAngle(arm); B.setRpm(rpm);
   B.feeder_u = s.feeder_u;
+  if (B.lift) B.lift.press_n = s.lift_n;
   B.jitter = s.jitter;
   B.setBallSpread(s.vary ? Object.keys(B.M.controller.ball_spread || BALL_SPREAD) : null);
 }
 
 // ------------------------------------------------------------------ per step: firing (testbench.py advance) and sampling
+/** FIRE / SPACE: one shot, never a queue: ignored while a shot is in the air or one is already waiting. */
+function fireOne() { if (!app.tracker && app.queue === 0) app.queue = 1; }
+
 function fireStep(sim) {
   const B = app.shooter;
   if (app.recov && B.settled()) {                       // recovery: from the last shot's exit until ready again
@@ -484,7 +489,7 @@ function wireUi() {
   window.addEventListener('pointerdown', hideHint, { once: true });
   document.querySelectorAll('[data-ball]').forEach((b) => { b.onclick = () => { s.ball = b.dataset.ball; app._cmdKey = null; syncUi(); }; });
   document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => { s.mode = b.dataset.mode; syncUi(); }; });
-  $('fire').onclick = () => { app.queue++; };
+  $('fire').onclick = fireOne;
   $('burst').onclick = () => { app.queue += s.burst; };
   $('auto').onclick = () => { s.auto = !s.auto; syncUi(); };
   $('stop').onclick = () => { app.queue = 0; s.auto = false; syncUi(); };
@@ -509,7 +514,7 @@ function wireUi() {
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'SELECT' || (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox')) return;
     const k = e.key.toLowerCase();
-    if (k === ' ') { e.preventDefault(); app.queue++; }
+    if (k === ' ') { e.preventDefault(); fireOne(); }
     else if (k === 'b') app.queue += s.burst;
     else if (k === 'a') s.auto = !s.auto;
     else if (k === 'r') { app.shots = []; app.shotDirty = app.logDirty = true; }
