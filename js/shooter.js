@@ -53,7 +53,7 @@ export class Servos {
     this.S = {};
     for (const [k, s] of Object.entries(this.spec)) {
       this.S[k] = { aid: sim.actuatorId(s.actuator), qadr: sim.qadr(s.joint), vadr: sim.vadr(s.joint), speed: s.speed,
-        deadband: s.deadband || 0, tgt: 0, cmd: 0, held: undefined };
+        deadband: s.deadband || 0, rigid: !!s.rigid, tgt: 0, cmd: 0, held: undefined };
     }
   }
   set(k, target) { this.S[k].tgt = target; }
@@ -67,8 +67,10 @@ export class Servos {
         tgt = s.held;
       }
       const e = tgt - s.cmd, mx = s.speed * dt;
-      s.cmd += Math.max(-mx, Math.min(mx, e));
+      const v = Math.max(-mx, Math.min(mx, e));
+      s.cmd += v;
       sim.ctrlv[s.aid] = s.cmd;
+      if (s.rigid) { sim.qpos[s.qadr] = s.cmd; sim.qvel[s.vadr] = v / dt; }   // held statically at the command: the ball never moves it
     }
   }
 }
@@ -98,7 +100,7 @@ export class V10Lift {
     this.j_lw = sim.qadr(V.wheel_joint); this.v_lw = sim.vadr(V.wheel_joint);
     this.j_rot = sim.qadr(V.motor.joint); this.v_rot = sim.vadr(V.motor.joint); this.aid = sim.actuatorId(V.motor.actuator);
     this.range0 = sim.m.jnt_range[2 * this.jid]; this.spring0 = sim.m.qpos_spring[this.j_larm];    // as compiled (engaged)
-    this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0;
+    this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0; this.caught = true;
   }
   /** set_arm_stop: the crank's link puts the arm's closing stop at q (rad); the flexure presses the arm onto it. */
   setArmStop(sim, q) {
@@ -107,10 +109,13 @@ export class V10Lift {
   /** Back to the compiled stop (engaged), e.g. after a reset. */
   restore(sim) {
     const m = sim.m; m.jnt_range[2 * this.jid] = this.range0; m.qpos_spring[this.j_larm] = this.spring0;
-    this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0;
+    this.u = 0; this.current = 0; this.engage_t0 = null; this.arm_stop = 0; this.caught = true;
   }
   preStep(sim) {
     const V = this.V, L2 = V.lift2;
+    if (L2 && L2.mode === 'catch' && !this.caught && sim.qpos[this.j_larm] > L2.q_ret + L2.rearm) {   // pushed above the catch: it engages
+      this.setArmStop(sim, L2.q_ret); this.caught = true;
+    }
     if (L2 && L2.mode === 'servo' && this.engage_t0 !== null) {       // the crank between its dead centres
       const f = Math.min(1.0, (sim.d.time - this.engage_t0) / L2.t_engage);
       this.setArmStop(sim, L2.q_ret * 0.5 * (1.0 + Math.cos(Math.PI * f)));
@@ -472,10 +477,12 @@ export class Shooter {
     if (L2) {                                       // the arm retracted; its crank engages it now
       ca = -L2.sign;
       if (L2.mode === 'servo') { L.setArmStop(s, L2.q_ret); L.engage_t0 = s.time; }
+      if (L2.mode === 'catch') { L.setArmStop(s, L2.q_low); L.caught = false; }   // the catch retracts: the arm falls onto the ball
       s.qpos[L.j_larm] = L2.q_ret; s.qvel[L.v_larm] = 0.0;
     }
     s.qvel[L.v_lw] = 0.0; s.qvel[L.v_rot] = 0.0;
-    s.qpos[L.j_rot] = s.qpos[L.j_lw] + ca * s.qpos[L.j_larm];      // the belts' tie
+    const T = V.tie || [1.0, ca];                                     // the belts' tie (rotor = T0 wheel + T1 arm)
+    s.qpos[L.j_rot] = T[0] * s.qpos[L.j_lw] + T[1] * s.qpos[L.j_larm];
     const o = V.origin;
     const pos = [o[0] + c * xb - sn * yb, o[1] + sn * xb + c * yb, zb + h];
     const vel = [U(-0.03, 0.03), U(-0.03, 0.03), 0.0], w = [U(-3, 3), U(-3, 3), U(-3, 3)];

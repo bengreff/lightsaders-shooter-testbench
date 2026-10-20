@@ -1,5 +1,19 @@
 [
  {
+  "id": "turret9b",
+  "folder": "turret9b",
+  "label": "Turret 9b (full CAD)",
+  "group": "Design",
+  "describe": "Layout 9b, every part of the code-CAD (sim/mechanism/turret/cad.py). Hood and extension held rigidly at the servo command; the lift wheel is a free pivot under gravity that rests on a catch 3 mm above a seated NECTAR, drops onto the ball when the catch retracts and is caught again as it falls back. The robot (cell, U, lift) is at a random angle under the turret each shot."
+ },
+ {
+  "id": "turret9b_contact",
+  "folder": "turret9b_contact",
+  "label": "Turret 9b (contact parts only)",
+  "group": "Design",
+  "describe": "Layout 9b with ONLY the parts that touch the ball, floating in place: lift wheel, cell pockets, bore U + ring, hood + extension, flywheel. Same physics and controls as the full 9b."
+ },
+ {
   "id": "v12b_lift",
   "label": "Lightsaders v2 turret + lift feed (v12b)",
   "group": "Design",
