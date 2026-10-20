@@ -162,8 +162,9 @@ function apply() {
 }
 
 // ------------------------------------------------------------------ per step: firing (testbench.py advance) and sampling
-/** FIRE / SPACE: one shot, never a queue: ignored while a shot is in the air or one is already waiting. */
-function fireOne() { if (!app.tracker && app.queue === 0) app.queue = 1; }
+/** FIRE / SPACE: always arms exactly ONE shot (fired as soon as the shooter is ready, also while a slow-motion shot is
+ *  still in the air); pressing again before it fires does not stack more. */
+function fireOne() { if (app.queue === 0) app.queue = 1; }
 
 function fireStep(sim) {
   const B = app.shooter;

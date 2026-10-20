@@ -5,15 +5,15 @@
  "mujoco_version": "3.13.0",
  "scene": "scene.xml",
  "files": {
-  "../../meshes/t9b_robot_print_black.61778332.stl": "../../meshes/t9b_robot_print_black.61778332.stl",
+  "../../meshes/t9b_robot_print_black.6dab4513.stl": "../../meshes/t9b_robot_print_black.6dab4513.stl",
   "../../meshes/t9b_robot_print_blue.99808c2e.stl": "../../meshes/t9b_robot_print_blue.99808c2e.stl",
   "../../meshes/t9b_robot_print_green.3b3f947f.stl": "../../meshes/t9b_robot_print_green.3b3f947f.stl",
-  "../../meshes/t9b_robot_steel.57eb8395.stl": "../../meshes/t9b_robot_steel.57eb8395.stl",
+  "../../meshes/t9b_robot_steel.2c458e81.stl": "../../meshes/t9b_robot_steel.2c458e81.stl",
   "../../meshes/t9b_world_print_teal.755a3223.stl": "../../meshes/t9b_world_print_teal.755a3223.stl",
-  "../../meshes/t9b_lwheel_print_black.9b8934b0.stl": "../../meshes/t9b_lwheel_print_black.9b8934b0.stl",
-  "../../meshes/t9b_lwheel_rubber.05bf6bc0.stl": "../../meshes/t9b_lwheel_rubber.05bf6bc0.stl",
-  "../../meshes/t9b_larm_print_orange.769566c5.stl": "../../meshes/t9b_larm_print_orange.769566c5.stl",
-  "../../meshes/t9b_catch_print_magenta.3a92d2ec.stl": "../../meshes/t9b_catch_print_magenta.3a92d2ec.stl",
+  "../../meshes/t9b_lwheel_print_black.41a1f7ea.stl": "../../meshes/t9b_lwheel_print_black.41a1f7ea.stl",
+  "../../meshes/t9b_lwheel_rubber.1ce73c40.stl": "../../meshes/t9b_lwheel_rubber.1ce73c40.stl",
+  "../../meshes/t9b_larm_print_orange.3ee6d7a0.stl": "../../meshes/t9b_larm_print_orange.3ee6d7a0.stl",
+  "../../meshes/t9b_catch_print_magenta.a9576fd2.stl": "../../meshes/t9b_catch_print_magenta.a9576fd2.stl",
   "../../meshes/t9b_fly_hogback.84ca8d80.stl": "../../meshes/t9b_fly_hogback.84ca8d80.stl",
   "../../meshes/t9b_fly_steel_dark.dea3c6cb.stl": "../../meshes/t9b_fly_steel_dark.dea3c6cb.stl",
   "../../meshes/t9b_hood_print_orange.b1688a9a.stl": "../../meshes/t9b_hood_print_orange.b1688a9a.stl",
@@ -21,10 +21,10 @@
  },
  "timestep": 0.0002,
  "counts": {
-  "nq": 78,
-  "nv": 68,
+  "nq": 79,
+  "nv": 69,
   "nu": 5,
-  "nbody": 20,
+  "nbody": 21,
   "ngeom": 607,
   "nmesh": 593
  },
@@ -971,8 +971,8 @@
     "spin": -1,
     "tpr": 28.0,
     "P": 331.6499,
-    "I": 0.0,
-    "D": 0.0,
+    "I": 3.0,
+    "D": 80.0,
     "F": 11.7025,
     "target_rpm": 3000.0,
     "radius": 0.048,
@@ -1053,7 +1053,7 @@
    "lift2": {
     "mode": "catch",
     "q_ret": 0.0,
-    "q_low": -0.4886921905584123,
+    "q_low": -0.40142572795869863,
     "rearm": 0.008726646259971648,
     "pre": 0.0,
     "t_engage": 0.0,
@@ -1112,7 +1112,7 @@
  },
  "design": {
   "height_m": 0.0,
-  "gate_tol": 0.03,
+  "gate_tol": 0.01,
   "angle_travel_deg": 13.7955,
   "inject_speed": 0.0,
   "squeeze_pollen_mm": 4.23,
@@ -1187,7 +1187,7 @@
   {
    "name": "lower_stop",
    "body": "robot",
-   "note": "the lower stop: the arm rests here at -28 deg"
+   "note": "the lower stop: the arm rests here at -23 deg"
   },
   {
    "name": "hogback_0",

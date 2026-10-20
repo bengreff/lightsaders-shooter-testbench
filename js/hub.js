@@ -35,8 +35,12 @@ export class Hub {
         w.vel = (b[1] - a[1]) / (b[0] - a[0]);
       }
       const err = w.target - w.vel;
-      w.integ += err;
-      w.u = Math.max(-1, Math.min(1, (w.F * w.target + w.P * err + w.I * w.integ) / 32767.0));
+      // D on the measurement (no kick on a target change); the integral only accumulates while the output is not
+      // saturated (anti-windup). D = 0 and I = 0 (the older designs) give the plain loop unchanged.
+      const dv = w.vprev === undefined ? 0 : w.vel - w.vprev; w.vprev = w.vel;
+      const raw = (w.F * w.target + w.P * err + w.I * (w.integ + err) - (w.D || 0) * dv) / 32767.0;
+      if (Math.abs(raw) < 1 || Math.sign(err) !== Math.sign(raw)) w.integ += err;
+      w.u = Math.max(-1, Math.min(1, (w.F * w.target + w.P * err + w.I * w.integ - (w.D || 0) * dv) / 32767.0));
       if (this.direct) sim.ctrlv[w.aid] = w.u;
     }
   }
