@@ -1,5 +1,33 @@
 [
  {
+  "id": "topspin",
+  "folder": "topspin",
+  "label": "Topspin turret (contact parts, squishy feed)",
+  "group": "Design",
+  "describe": "Ben's 2026-10-21 topspin under-wrap turret, ONLY the parts that touch the ball, floating: 1 Hogback(s) + 6 steel discs (bottom forward, HTD 16:16), the feed's top squishy wheel geared 1:4 off the flywheel motor, the short bore ring (one part with the NECTAR rails, which ride a crowned 4 mm band at constant radius), the concave POLLEN hood (out 29 mm for NECTAR) with its curved entry piece, and comb-finger tips about the axle (angle slider = exit 50-85 deg). Each ball starts squeezed between the squishy and the ring, rolling up."
+ },
+ {
+  "id": "topspin_cad",
+  "folder": "topspin_cad",
+  "label": "Topspin turret \u2014 full CAD v2",
+  "group": "Design",
+  "describe": "Ben's pie-slice turret, full CAD over the topspin contact parts (ridged squishy 67 mm gap, 112 mm, 1:4 off the flywheel; balls start at rest). 1/4 in plywood side plates tied by spacer tubes; the bore ring + fixed NECTAR rails print carries ears on the ring's outer wall with flaps bolted to the plates' outer faces (3 x M4 each), so the turret holds together without the goBILDA 3208 ring. One-print support deck with guide plates, tilt-servo cradle and idler wall. The static POLLEN hood runs on rollers in the guide plates, pushed by a servo crank and held at POLLEN by a heart-groove latch (horizontal shuttle, gravity-neutral; any push 8.0-9.5 mm latches and releases). The arm: two identical MOD 1 pie slices on the flywheel axle, crossbar, hard stops at +-18 deg, moving NECTAR rail pieces, and the moving POLLEN tips sliding on the arm, set by an arc rail on the hood (no tip servo). Every printed part is one solid and every part is checked to sit on its mount. Structure is drawn only; the physics is the topspin contact model."
+ },
+ {
+  "id": "topspin_sq4",
+  "folder": "topspin_sq4",
+  "label": "Topspin, ridged squishy up + in, 1:4",
+  "group": "Design",
+  "describe": "Same contact parts as 'topspin'; the squishy wheel is the team's cast wheel WITH its 6 sawtooth ridges (5 mm, read off Ben's photos), moved IN to a 67 mm gap (NECTAR squashes it to 0.4 mm short of its 25.4 mm stop) and UP to 112 mm below the flywheel axle (the highest that still lifts a POLLEN from rest at the bottom: 100/100; 110 mm 58/60), geared 1:4 off the flywheel. Each ball starts AT REST at the bottom of the turret, squeezed between the wheel and the bore's front wall. No calibration of its own yet (TARGET uses topspin's)."
+ },
+ {
+  "id": "topspin_sq16",
+  "folder": "topspin_sq16",
+  "label": "Topspin, ridged squishy up + in, 1:16",
+  "group": "Design",
+  "describe": "Same contact parts as 'topspin'; the squishy wheel is the team's cast wheel WITH its 6 sawtooth ridges (5 mm, read off Ben's photos), moved IN to a 67 mm gap (NECTAR squashes it to 0.4 mm short of its 25.4 mm stop) and UP to 112 mm below the flywheel axle (the highest that still lifts a POLLEN from rest at the bottom: 100/100; 110 mm 58/60), geared 1:16 off the flywheel. Each ball starts AT REST at the bottom of the turret, squeezed between the wheel and the bore's front wall. At 1:16 POLLEN does NOT feed (0/10): the wheel lets go ~115 mm from the axle and the ball falls back before the flywheel can take it. No calibration of its own yet (TARGET uses topspin's)."
+ },
+ {
   "id": "turret9b",
   "folder": "turret9b",
   "label": "Turret 9b (full CAD)",

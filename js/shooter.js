@@ -376,12 +376,15 @@ export class Shooter {
     v.set(vel, ball.vadr); v.set(angvel, ball.vadr + 3);
   }
 
+  _liveBalls() { return new Set([...this.trackers].map((t) => t.ball)); }
+
   park(ball, k) { const p = this.M.controller.park; this.place(ball, [p.x + p.dx * k, 0, p.z], [0, 0, 0]); }
 
   /** Park balls whose flight is over (on the floor, or far to the side) so a burst reuses them. */
   parkAllFlown() {   // bench.py park_all_flown: also a ball coming back DOWN onto the shooter (a near-vertical shot)
-    const X = this.sim.xpos, V = this.sim.qvel, h = this.D.height_m;
+    const X = this.sim.xpos, V = this.sim.qvel, h = this.D.height_m, live = this._liveBalls();
     this.balls.forEach((b, k) => {
+      if (live.has(b)) return;                      // a ball still being shot is never parked (it can dip into the hood)
       const o = 3 * b.body;
       if (X[o] < 2.0 && (X[o + 2] < 0.06 || Math.abs(X[o + 1]) > 2.5 || (Math.abs(X[o + 1]) < 0.6 && X[o + 2] < h + 0.3 && V[b.vadr + 2] < -0.5))) this.park(b, k);
     });
@@ -407,6 +410,7 @@ export class Shooter {
     const C = this.M.controller;
     if (C.feeder) return this.stage(ball);
     if (C.v10) return this.v10CellStart(ball);
+    if (C.inject === 'squish') return this.squishStart(ball);
     if (C.cell) return this.cellStart(ball);
     const h = this.D.height_m;
     const { pos, vdir } = C.inject === 'feed_column' ? DS.feedStart(this.D, ball.type)
@@ -497,6 +501,37 @@ export class Shooter {
     const vel = [U(-0.03, 0.03), U(-0.03, 0.03), 0.0], w = [U(-3, 3), U(-3, 3), U(-3, 3)];
     this.place(ball, pos, vel, w);
     L.u = jit ? U(0.9, 1.0) : 1.0;
+    return this.overlap(ball);
+  }
+
+  /** The topspin turret's feed (export_topspin.py): the ball squeezed between the squishy wheel and the bore's front wall,
+   *  rolling up the wall at half the squished rim's surface speed. Each rim segment the ball overlaps starts compressed to
+   *  touch it (so nothing springs). Jitter: height, across, off the wall, speed, a little spin. */
+  squishStart(ball) {
+    const Q = this.M.controller.squish, s = this.sim, jit = this.jitter, J = Q.jitter;
+    const U = (lo, hi) => (jit ? this.rand.uniform(lo, hi) : 0.5 * (lo + hi));
+    const r = s.m.geom_size[3 * ball.geom], E = Q.entry[ball.type];
+    const live = this._liveBalls();
+    this.balls.forEach((bb, k) => {                 // a ball still in the turret (a stalled shot) is parked
+      if (bb === ball || live.has(bb)) return;
+      const X = s.xpos, q = 3 * bb.body;
+      if (Math.hypot(X[q] - Q.axle[0], X[q + 1] - Q.axle[1], X[q + 2] - Q.axle[2]) < 0.35) this.park(bb, k);
+    });
+    const c = [E.pos[0] + (jit ? U(-J.dx, J.dx) : 0), E.pos[1] + (E.radius - r) - (jit ? U(0, J.gap) : 0), E.pos[2] + (jit ? U(-J.dz, J.dz) : 0)];
+    const hub = s.qpos[s.qadr(Q.hub_joint)];
+    let comp = 0;
+    Q.seg_joints.forEach((jn, i) => {               // the ray from the axle along segment i: where it first meets the ball
+      const a = Q.seg_deg[i] * Math.PI / 180 + hub, d = [Math.cos(a), Math.sin(a)];
+      const w = [c[1] - Q.axle[1], c[2] - Q.axle[2]], along = d[0] * w[0] + d[1] * w[1];
+      const perp2 = w[0] * w[0] + w[1] * w[1] - along * along;
+      let x = 0;
+      if (along > 0 && perp2 < r * r) { const tn = along - Math.sqrt(r * r - perp2); const Rk = Q.seg_R ? Q.seg_R[i] : Q.R; if (tn < Rk) x = Math.min(Rk - tn, Q.stop); }   // seg_R: the ridged wheel
+      s.qpos[s.qadr(jn)] = -x; s.qvel[s.vadr(jn)] = 0; comp = Math.max(comp, x);
+    });
+    const om = s.qvel[s.vadr(Q.fly_joint)] / Q.ratio;
+    const v = 0.5 * om * (Q.R - comp) * (Q.start_speed ?? 1) * (jit ? U(1 - J.speed, 1 + J.speed) : 1);   // start_speed 0: the ball starts at rest, squeezed
+    const w = [-v / r + (jit ? U(-J.spin, J.spin) : 0), jit ? U(-J.spin, J.spin) : 0, jit ? U(-J.spin, J.spin) : 0];
+    this.place(ball, c, [0, 0, v], w);
     return this.overlap(ball);
   }
 

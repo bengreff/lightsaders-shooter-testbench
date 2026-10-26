@@ -45,6 +45,8 @@ async function boot() {
   wireUi();
   app.view = new View($('view'));
   VIEWS.forEach(([nm], i) => { const b = document.createElement('button'); b.textContent = nm; b.title = nm === 'FLIGHT' ? 'Camera: zoomed out to follow the ball in flight (key V)' : `Camera: ${nm.toLowerCase()} view of the shooter (key V)`; b.onclick = () => setView(i); $('views').appendChild(b); });
+  { const b = document.createElement('button'); b.id = 'cadbtn'; b.textContent = 'CAD'; b.title = 'CAD style: even light, no shadows, part outlines (key L)';
+    b.onclick = () => setCad(!app.s.cad); $('views').appendChild(b); }
   app.strip = new Strip($('charts'), [
     { label: 'wheel rpm (target grey)', unit: 'rpm', color: '#f48434', fmt: (v) => fmt(v, 0), ref: true, span: 40 },
     { label: 'motor current', unit: 'A', color: '#78beff', fmt: (v) => fmt(v, 2), span: 0.5 },
@@ -83,6 +85,8 @@ async function loadVariant(id) {
   app.sampleHook = app.sim.addHook({ postStep: sampleStep });
   app.view.build(app.sim, B.balls);
   app.view.setShowCollision(app.s.collision);
+  if (app.s.cad === undefined) app.s.cad = !!data.manifest.view?.cad;      // a variant may open in the CAD style
+  setCad(app.s.cad);
   app.calFile = data.calibration;
   app.map = app.maps[v.id] || (data.calibration ? new CalMap(data.calibration) : null);
   if (!app.map && app.s.mode === 'target') app.s.mode = 'direct';
@@ -345,7 +349,7 @@ function syncUi() {
   $('burstN').textContent = `x${s.burst}`;
   $('auto').classList.toggle('on', s.auto);
   $('pause').textContent = s.paused ? 'Run (P)' : 'Pause (P)';
-  document.querySelectorAll('#views button').forEach((b, i) => b.classList.toggle('on', i === s.view));
+  document.querySelectorAll('#views button').forEach((b, i) => b.classList.toggle('on', b.id === 'cadbtn' ? !!s.cad : i === s.view));
 }
 
 function liveUi() {
@@ -441,6 +445,7 @@ function calInfo() {
   const v = app.variant.id;
   if (!app.map) $('calinfo').textContent = 'No calibration for this variant: DIRECT mode only. Recalibrate to measure one here (about 1-3 min).';
   else if (app.maps[v]) $('calinfo').textContent = `Measured in this browser (${c.pollen.n + c.nectar.n} shots, ${fmt(c.wall_s, 0)} s): natural bicubic interpolation through the grid means. Squeezes ${fmt(c.settings?.squeeze?.pollen, 1)} / ${fmt(c.settings?.squeeze?.nectar, 1)} mm, feeder ${fmt(c.settings?.feeder_u, 2)}.`;
+  else if (!c.pollen.spline_v) $('calinfo').textContent = `Measured calibration (${c.source}): grid means, ${c.pollen.n ?? '?'} + ${c.nectar.n ?? '?'} shots, interpolated. Valid for the design's squeeze settings.`;
   else $('calinfo').textContent = `From the Python calibration (${c.source}): the same smoothing splines as shooter/calibrate.py, ${c.pollen.n ?? '?'} + ${c.nectar.n ?? '?'} shots. Valid for the design's squeeze settings.`;
   $('calDownload').hidden = !app.maps[v];
 }
@@ -476,6 +481,11 @@ function endRecal() {
 }
 
 // ------------------------------------------------------------------ wiring
+function setCad(on) {
+  app.s.cad = !!on; app.view.setCad(app.s.cad);
+  const b = $('cadbtn'); if (b) b.classList.toggle('on', app.s.cad);
+}
+
 function setView(i) {
   app.s.view = ((i % VIEWS.length) + VIEWS.length) % VIEWS.length;
   const [, az, el, dist, look] = VIEWS[app.s.view];
@@ -523,6 +533,7 @@ function wireUi() {
     else if (k === '2') s.ball = 'nectar';
     else if (k === 'm' && app.map) s.mode = s.mode === 'target' ? 'direct' : 'target';
     else if (k === 'v') setView(s.view + 1);
+    else if (k === 'l') setCad(!s.cad);
     else if (k === 'p') s.paused = !s.paused;
     else if (k === 'escape') $('about').hidden = true;
     else if (e.key.startsWith('Arrow')) {

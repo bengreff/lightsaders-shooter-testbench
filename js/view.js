@@ -35,14 +35,19 @@ export class View {
     this.controls.enableDamping = true;
     this.controls.update();
     // light: soft sky/ground fill + one shadow-casting key light + a cool rim
-    s.add(new THREE.HemisphereLight(0xdfe8ff, 0x2a2622, 0.9));
+    s.add(this.hemi = new THREE.HemisphereLight(0xdfe8ff, 0x2a2622, 0.9));
     const key = this.key = new THREE.DirectionalLight(0xffffff, 2.2);
     key.position.set(1.2, -1.6, 2.4); key.castShadow = true;
     key.shadow.mapSize.set(2048, 2048);
     const sc = key.shadow.camera; sc.left = -0.8; sc.right = 0.8; sc.top = 0.8; sc.bottom = -0.8; sc.near = 0.1; sc.far = 6;
     key.shadow.bias = -0.0004; key.shadow.normalBias = 0.002;
     s.add(key); s.add(key.target);
-    const rim = new THREE.DirectionalLight(0x9fb8ff, 0.6); rim.position.set(-1.5, 1.2, 1.0); s.add(rim);
+    const rim = this.rim = new THREE.DirectionalLight(0x9fb8ff, 0.6); rim.position.set(-1.5, 1.2, 1.0); s.add(rim);
+    // CAD style (setCad): even light from the viewer (a headlight on the camera), no cast shadows, matte parts with
+    // their edges drawn, a light neutral background, no tone mapping: the shape reads as in a CAD program
+    this.head = new THREE.DirectionalLight(0xffffff, 0.0); this.head.position.set(0, 0, 0); c.add(this.head);
+    this.head.target.position.set(0, 0, -1); c.add(this.head.target); s.add(c);
+    this.cad = false;
     this.showCollision = false;
     this.geoms = []; this.trails = [];
     this.root = new THREE.Group(); s.add(this.root);
@@ -107,7 +112,11 @@ export class View {
       mesh.matrixAutoUpdate = false;
       mesh.castShadow = rgba[3] > 0.5 && !collision; mesh.receiveShadow = !collision;
       mesh.visible = !collision || this.showCollision;
-      mesh.userData = { geom: g, body: bodyid[g], collision };
+      mesh.userData = { geom: g, body: bodyid[g], collision, mat0: { roughness: mat.roughness, metalness: mat.metalness } };
+      if (!collision && !ballColor.has(g)) {            // the part's outline (CAD style only)
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 28), new THREE.LineBasicMaterial({ color: 0x1b1f24, transparent: true, opacity: 0.55 }));
+        edges.visible = this.cad; mesh.add(edges); mesh.userData.edges = edges;
+      }
       this.root.add(mesh);
       this.geoms.push(mesh);
     }
@@ -118,9 +127,10 @@ export class View {
     const half = sz[0] > 0 ? Math.min(sz[0], 6) : 6;
     const geo = new THREE.PlaneGeometry(2 * half, 2 * half);
     const mat = new THREE.MeshStandardMaterial({ color: 0x2a2e36, roughness: 0.95, metalness: 0 });
-    const floor = new THREE.Mesh(geo, mat); floor.receiveShadow = true; this.root.add(floor);
-    const grid = new THREE.GridHelper(2 * half, 2 * half * 4, 0x4a5160, 0x363b45);   // 0.25 m cells
+    const floor = this.floor = new THREE.Mesh(geo, mat); floor.receiveShadow = true; this.root.add(floor);
+    const grid = this.grid = new THREE.GridHelper(2 * half, 2 * half * 4, 0x4a5160, 0x363b45);   // 0.25 m cells
     grid.rotateX(Math.PI / 2); grid.position.z = 0.0005; this.root.add(grid);
+    this.setCad(this.cad);
   }
 
   _trail(b) {
@@ -155,6 +165,26 @@ export class View {
       tr.pos[k] = X[o]; tr.pos[k + 1] = X[o + 1]; tr.pos[k + 2] = X[o + 2];
       tr.n++;
       if (X[o + 2] < 0.05 || t - tr.t0 > TRAIL_MAX_S) { tr.active = false; tr.tEnd = t; }   // landed or long enough
+    }
+  }
+
+  /** CAD style on/off (see the constructor). Parts keep their colours; only light, shading and outlines change. */
+  setCad(on) {
+    this.cad = !!on;
+    const r = this.renderer;
+    r.toneMapping = on ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
+    this.scene.background = new THREE.Color(on ? 0xd9dde3 : 0x14171d);
+    this.hemi.color.set(on ? 0xffffff : 0xdfe8ff); this.hemi.groundColor.set(on ? 0x9097a2 : 0x2a2622); this.hemi.intensity = on ? 1.6 : 0.9;
+    this.key.intensity = on ? 0.35 : 2.2; this.key.castShadow = !on; this.rim.intensity = on ? 0.0 : 0.6;
+    this.head.intensity = on ? 1.5 : 0.0;
+    if (this.floor) { this.floor.material.color.set(on ? 0xc4c9d1 : 0x2a2e36); this.floor.receiveShadow = !on; }
+    if (this.grid) { const gm = Array.isArray(this.grid.material) ? this.grid.material : [this.grid.material]; gm.forEach((m) => { m.color.set(on ? 0xa7adb6 : 0x363b45); }); }
+    for (const g of this.geoms) {
+      const u = g.userData, m = g.material;
+      if (u.collision) continue;
+      m.roughness = on ? 0.62 : u.mat0.roughness; m.metalness = on ? 0.0 : u.mat0.metalness; m.needsUpdate = true;
+      g.castShadow = !on && m.opacity > 0.5; g.receiveShadow = !on;
+      if (u.edges) u.edges.visible = on;
     }
   }
 

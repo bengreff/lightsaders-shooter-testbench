@@ -1,0 +1,42 @@
+{
+ "pollen": {
+  "targets": 40,
+  "jams": 0,
+  "speed_err_mean_pct": -0.08,
+  "elev_err_mean_deg": 0.08,
+  "speed_err_rms_pct": 0.55,
+  "speed_err_max_pct": 1.18,
+  "elev_err_rms_deg": 0.6,
+  "elev_err_max_deg": 1.12,
+  "range": {
+   "speed": [
+    5,
+    6.8
+   ],
+   "elev": [
+    50,
+    83.4
+   ]
+  }
+ },
+ "nectar": {
+  "targets": 40,
+  "jams": 0,
+  "speed_err_mean_pct": -0.1,
+  "elev_err_mean_deg": -0.01,
+  "speed_err_rms_pct": 0.89,
+  "speed_err_max_pct": 2.26,
+  "elev_err_rms_deg": 0.95,
+  "elev_err_max_deg": 2.63,
+  "range": {
+   "speed": [
+    5,
+    6.8
+   ],
+   "elev": [
+    50.9,
+    83.7
+   ]
+  }
+ }
+}
