@@ -1,65 +1,9 @@
 [
  {
-  "id": "topspin",
-  "folder": "topspin",
-  "label": "Topspin turret (contact parts, squishy feed)",
+  "id": "onehood_v3m",
+  "folder": "onehood_v3m",
+  "label": "One hood v3, middle curvature (adopted 2026-11-03): full CAD + hood mechanism",
   "group": "Design",
-  "describe": "Ben's 2026-10-21 topspin under-wrap turret, ONLY the parts that touch the ball, floating: 1 Hogback(s) + 6 steel discs (bottom forward, HTD 16:16), the feed's top squishy wheel geared 1:4 off the flywheel motor, the short bore ring (one part with the NECTAR rails, which ride a crowned 4 mm band at constant radius), the concave POLLEN hood (out 29 mm for NECTAR) with its curved entry piece, and comb-finger tips about the axle (angle slider = exit 50-85 deg). Each ball starts squeezed between the squishy and the ring, rolling up."
- },
- {
-  "id": "topspin_cad",
-  "folder": "topspin_cad",
-  "label": "Topspin turret \u2014 full CAD v2",
-  "group": "Design",
-  "describe": "Ben's pie-slice turret, full CAD over the topspin contact parts (ridged squishy 67 mm gap, 112 mm, 1:4 off the flywheel; balls start at rest). 1/4 in plywood side plates tied by spacer tubes; the bore ring + fixed NECTAR rails print carries ears on the ring's outer wall with flaps bolted to the plates' outer faces (3 x M4 each), so the turret holds together without the goBILDA 3208 ring. One-print support deck with guide plates, tilt-servo cradle and idler wall. The static POLLEN hood runs on rollers in the guide plates, pushed by a servo crank and held at POLLEN by a heart-groove latch (horizontal shuttle, gravity-neutral; any push 8.0-9.5 mm latches and releases). The arm: two identical MOD 1 pie slices on the flywheel axle, crossbar, hard stops at +-18 deg, moving NECTAR rail pieces, and the moving POLLEN tips sliding on the arm, set by an arc rail on the hood (no tip servo). Every printed part is one solid and every part is checked to sit on its mount. Structure is drawn only; the physics is the topspin contact model."
- },
- {
-  "id": "topspin_sq4",
-  "folder": "topspin_sq4",
-  "label": "Topspin, ridged squishy up + in, 1:4",
-  "group": "Design",
-  "describe": "Same contact parts as 'topspin'; the squishy wheel is the team's cast wheel WITH its 6 sawtooth ridges (5 mm, read off Ben's photos), moved IN to a 67 mm gap (NECTAR squashes it to 0.4 mm short of its 25.4 mm stop) and UP to 112 mm below the flywheel axle (the highest that still lifts a POLLEN from rest at the bottom: 100/100; 110 mm 58/60), geared 1:4 off the flywheel. Each ball starts AT REST at the bottom of the turret, squeezed between the wheel and the bore's front wall. No calibration of its own yet (TARGET uses topspin's)."
- },
- {
-  "id": "topspin_sq16",
-  "folder": "topspin_sq16",
-  "label": "Topspin, ridged squishy up + in, 1:16",
-  "group": "Design",
-  "describe": "Same contact parts as 'topspin'; the squishy wheel is the team's cast wheel WITH its 6 sawtooth ridges (5 mm, read off Ben's photos), moved IN to a 67 mm gap (NECTAR squashes it to 0.4 mm short of its 25.4 mm stop) and UP to 112 mm below the flywheel axle (the highest that still lifts a POLLEN from rest at the bottom: 100/100; 110 mm 58/60), geared 1:16 off the flywheel. Each ball starts AT REST at the bottom of the turret, squeezed between the wheel and the bore's front wall. At 1:16 POLLEN does NOT feed (0/10): the wheel lets go ~115 mm from the axle and the ball falls back before the flywheel can take it. No calibration of its own yet (TARGET uses topspin's)."
- },
- {
-  "id": "turret9b",
-  "folder": "turret9b",
-  "label": "Turret 9b (full CAD)",
-  "group": "Design",
-  "describe": "Layout 9b, every part of the code-CAD (sim/mechanism/turret/cad.py). Hood and extension held rigidly at the servo command; the lift wheel is a free pivot under gravity that rests on a catch 3 mm above a seated NECTAR, drops onto the ball when the catch retracts and is caught again as it falls back. The robot (cell, U, lift) is at a random angle under the turret each shot."
- },
- {
-  "id": "turret9b_contact",
-  "folder": "turret9b_contact",
-  "label": "Turret 9b (contact parts only)",
-  "group": "Design",
-  "describe": "Layout 9b with ONLY the parts that touch the ball, floating in place: lift wheel, cell pockets, bore U + ring, hood + extension, flywheel. Same physics and controls as the full 9b."
- },
- {
-  "id": "v12b_lift",
-  "label": "Lightsaders v2 turret + lift feed (v12b)",
-  "group": "Design",
-  "folder": "v12b_lift",
-  "describe": "The v2 robot's turret on its feed: the ball sits in the carousel cell's bowl, the servo crank swings the lift arm in and the 2 in rubber lift wheel rolls it up the Cat Tongue spine into the sprung throat wheel and the flywheel (shooter/v10.py V10Bench on designs/v12b.yaml). Drawn from the v2 code-CAD. No calibration yet: DIRECT mode (wheel rpm and hood angle)."
- },
- {
-  "id": "v9",
-  "label": "v9: sliding round hood + rolling extension",
-  "group": "Design",
-  "folder": "v9",
-  "describe": "Fixed trough hood slides level for NECTAR on a dead-centre crank; an extension rolls up the same circle for flatter shots; the ball is lifted from the carousel cell and caught by two sprung side wheels geared to the flywheel, then rides a fixed front ramp into the pinch. Everything sits on the ring gear."
- },
- {
-  "id": "team_turret",
-  "label": "Team turret draft (spring loaded)",
-  "group": "Design",
-  "folder": "team_turret",
-  "describe": "The team's first draft, read from its STEP: fixed exit angle (~56 deg), sprung hood on slotted carriers. Spring, motor drive and hood rest position are ESTIMATES."
+  "describe": "Turret v3 step 4: the FULL CAD, drawn on the bodies it moves with (export_v3_cad_scene.py; drawn only except the hood's mechanism). Frame: the ring with its 2 NECTAR teeth, plywood plates, shafts and bearings, 5203 motor and its end cup, HTD and GT2 belts and pulleys, plate tie, 3208 swivel, hood servo, crankshaft, fixings. Hood: the one-print hood on its 4 rollers, the angle servo on its B rail. The moving hood teeth (orange) turn with the angle slider and the herringbone angle pinion turns with them. The hood MOVES ON ITS REAL MECHANISM (export_v3_mech_scene.py, the model of turret_v3_mech.py): a free planar body guided only by its rollers in the plates' hook slots (contacts, rolling friction 0.01), driven by the 25-2 Torque servo as a DC motor behind its position loop through the 34T/52T gears (0.28 mm backlash, tooth friction), the crank and the 41.3 mm link (pin friction); POLLEN = the servo commanded past the seat to press the hood in with its 1.12 N m preload, NECTAR 0.57. The ball's loads act on this mechanism every shot. Contact model underneath (what the ball touches): 1 Hogback(s) + 6 steel discs (bottom forward, HTD 16:16), the feed's top squishy wheel geared 1:4 off the flywheel motor, the short bore ring (one part with the NECTAR rails, which ride a crowned 4 mm band at constant radius), the concave POLLEN hood (out 22 mm for NECTAR) with its curved entry piece, and comb-finger tips about the axle (angle slider = exit 50-85 deg). Each ball starts squeezed between the squishy and the ring, rolling up."
  }
 ]

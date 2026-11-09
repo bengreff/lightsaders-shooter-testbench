@@ -136,6 +136,99 @@ export class V10Lift {
   }
 }
 
+/** The turret v3 hood on its real mechanism (manifest.controller.hood_mech, written by tools/export_v3_mech_scene.py): the model
+ *  of tools/turret_v3_mech.py (Rig.run), step for step. The hood is a free planar body (2 slides, no rotation) guided only by its
+ *  rollers' contacts in the hook slots; the crank and the servo pinion are hinges. Per step: the link as a massless spring along
+ *  the knee - hood pin line (compression and tension, damped), the 52/34 mesh as a spring with the backlash dead band, both as
+ *  applied forces; the link pins' and the teeth's friction as the crank's dry friction (MuJoCo friction rows, set from this step's
+ *  loads); the 25-2 Torque servo as a DC motor behind its P+D position loop: torque = stall x (clip((e - Td w) / e_sat, -1, 1) -
+ *  w / w0), dead zone db. OFF: no motor torque, only the gearbox's backdrive friction. */
+export class HoodMech {
+  constructor(spec) {
+    this.H = spec; this.end = 'pollen'; this.cmd = spec.cmd.pollen; this.on = true;
+    this.tau = 0; this.f_link = 0; this.F_mesh = 0;
+  }
+  onLoad(sim) {
+    const J = this.H.joints;
+    this.iy = sim.qadr(J.y); this.iz = sim.qadr(J.z); this.ic = sim.qadr(J.crank); this.ip = sim.qadr(J.pinion);
+    this.vy = sim.vadr(J.y); this.vz = sim.vadr(J.z); this.vc = sim.vadr(J.crank); this.vp = sim.vadr(J.pinion);
+    this.fl = sim.m.dof_frictionloss;
+    this.b_link = this.H.link_body ? sim.m.body_mocapid[sim.bodyId(this.H.link_body)] : -1;
+  }
+  /** The hood seated at POLLEN, the mesh on the flank that pushes it there, the servo commanded to POLLEN (export: its preload). */
+  init(sim) {
+    const H = this.H, q = sim.qpos, v = sim.qvel;
+    q[this.iy] = 0; q[this.iz] = 0; q[this.ic] = 0; q[this.ip] = H.flank.pollen * H.bl / 2 * 0.98 / H.R_P;
+    v[this.vy] = 0; v[this.vz] = 0; v[this.vc] = 0; v[this.vp] = 0;
+    this.end = 'pollen'; this.cmd = H.cmd.pollen; this.on = true; this.tau = 0; this.f_link = 0; this.F_mesh = 0;
+  }
+  setEnd(bt) { this.end = bt; this.cmd = this.H.cmd[bt]; }
+  /** m along the straight POLLEN -> NECTAR line, from the variant's gap origin (the old slide's coordinate). */
+  disp(sim) { const H = this.H, a = H.travel.axis; return H.travel.pollen + sim.qpos[this.iy] * a[0] + sim.qpos[this.iz] * a[1]; }
+  /** m from the hood to an end's seat (2D). */
+  dist(sim, bt) { const e = this.H.ends[bt]; return Math.hypot(sim.qpos[this.iy] - e[0], sim.qpos[this.iz] - e[1]); }
+  speed(sim) { return Math.hypot(sim.qvel[this.vy], sim.qvel[this.vz]); }
+  /** m the rollers would have to move back along the path to touch their round slot ends at `bt` (turret_v3_mech.seat_gap; <= 0 =
+   *  seated, rolling round the end inside the clearance does not count). */
+  lift(sim, bt = this.end) {
+    const H = this.H, e = H.ends[bt], u = H.escape[bt], cl = H.clearance;
+    const ry = sim.qpos[this.iy] - e[0], rz = sim.qpos[this.iz] - e[1], x = ry * u[0] + rz * u[1], y = -ry * u[1] + rz * u[0];
+    return x + Math.sqrt(Math.max(0, cl * cl - y * y));
+  }
+  _pinLever(th) {                                    // np.interp on the export's table (clamped at the ends)
+    const T = this.H.pin_tab_th, L = this.H.pin_tab_lever, n = T.length;
+    if (th <= T[0]) return L[0];
+    if (th >= T[n - 1]) return L[n - 1];
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (T[mid] <= th) lo = mid; else hi = mid; }
+    return L[lo] + (L[hi] - L[lo]) * (th - T[lo]) / (T[hi] - T[lo]);
+  }
+  preStep(sim) {
+    const H = this.H, q = sim.qpos, qd = sim.qvel, Q = sim.qfrc;
+    let fl = this.fl; if (fl.length === 0) fl = this.fl = sim.m.dof_frictionloss;   // a grown heap detaches the view
+    const F = H.F, P0 = H.P0, Rc = H.Rc;
+    // the link (massless spring between the knee and the hood pin)
+    const th = q[this.ic], cs = Math.cos(H.k0 + th), sn = Math.sin(H.k0 + th), thd = qd[this.vc];
+    const dy = P0[0] + q[this.iy] - (F[0] + Rc * cs), dz = P0[1] + q[this.iz] - (F[1] + Rc * sn), ll = Math.hypot(dy, dz);
+    const uy = dy / ll, uz = dz / ll;
+    const vr = (qd[this.vy] + Rc * sn * thd) * uy + (qd[this.vz] - Rc * cs * thd) * uz, x = ll - H.Lk;
+    let f = 0;                                        // + = compression: pushes the hood away from the knee
+    if (x < 0) f = Math.max(0, -H.k_link * x - H.c_link * vr);
+    else if (x > H.play_link) f = Math.min(0, -H.k_link * (x - H.play_link) - H.c_link * vr);
+    // the 52/34 mesh: pitch-line slip with a dead band of the backlash
+    const xm = H.R_G * th + H.R_P * q[this.ip], vm = H.R_G * thd + H.R_P * qd[this.vp], hb = H.bl / 2;
+    let F3 = 0;
+    if (xm > hb) F3 = Math.max(0, H.k_mesh * (xm - hb) + H.c_mesh * vm);
+    else if (xm < -hb) F3 = Math.min(0, H.k_mesh * (xm + hb) + H.c_mesh * vm);
+    Q[this.vy] = f * uy; Q[this.vz] = f * uz;
+    Q[this.vc] = -f * Rc * (cs * uz - sn * uy) - F3 * H.R_G; Q[this.vp] = -F3 * H.R_P;
+    // dry frictions: the teeth's loss of the tooth load + the link pins (mu |f| x their lever on the crank)
+    fl[this.vc] = H.tooth_loss * Math.abs(F3) * H.R_G + H.mu_pin * Math.abs(f) * this._pinLever(th) + 1e-6;
+    fl[this.vp] = this.on ? 1e-6 : H.tau_backdrive + 1e-6;
+    let tau = 0;
+    if (this.on) {                                    // the servo: DC motor behind its P+D position loop
+      const S = H.servo, w = qd[this.vp];
+      let e = this.cmd - q[this.ip]; e = Math.sign(e) * Math.max(Math.abs(e) - S.db, 0);
+      const V = Math.max(-1, Math.min(1, (e - S.Td * w) / S.e_sat));
+      tau = S.stall * (V - w / S.w0);
+    }
+    Q[this.vp] += tau;
+    this.tau = tau; this.f_link = f; this.F_mesh = F3;
+  }
+  /** N m at the servo through its gears (the tooth force at the pinion's pitch radius). */
+  get meshTorque() { return Math.abs(this.F_mesh) * this.H.R_P; }
+  /** Pose the drawn link (a mocap body) from the crank and the hood. Visual only. */
+  pose(sim) {
+    if (this.b_link < 0) return;
+    const H = this.H, F = H.F, P0 = H.P0, A = H.axle, th = sim.qpos[this.ic];
+    const K = [F[0] + H.Rc * Math.cos(H.k0 + th), F[1] + H.Rc * Math.sin(H.k0 + th)];
+    const b0 = Math.atan2(P0[1] - (F[1] + H.Rc * Math.sin(H.k0)), P0[0] - (F[0] + H.Rc * Math.cos(H.k0)));
+    const b = Math.atan2(P0[1] + sim.qpos[this.iz] - K[1], P0[0] + sim.qpos[this.iy] - K[0]), a = b - b0;
+    sim.mocap_pos.set([A[0], A[1] + K[0], A[2] + K[1]], 3 * this.b_link);
+    sim.mocap_quat.set([Math.cos(a / 2), Math.sin(a / 2), 0, 0], 4 * this.b_link);
+  }
+}
+
 export class Shooter {
   /** manifest: a variant's manifest.json. opts: {seed, jitter (true: the Python bench's arrival jitter),
    *  ballSpread (null | BALL_SPREAD keys to vary per shot: bench.py set_ball_spread)}. */
@@ -155,11 +248,12 @@ export class Shooter {
     this.feeder = C.feeder ? new Feeder({ ...C.feeder, battery_v: C.motor?.battery_v ?? 12 }, this.motor) : null;
     this.servos = new Servos(C.servos);
     this.lift = C.lift ? new LiftServo(C.lift) : C.v10 ? new V10Lift(C.v10, this) : null;
+    this.mech = C.hood_mech ? new HoodMech(C.hood_mech) : null;   // the hood on its real mechanism (turret v3), else a servo-set slide
     this.air = new Air(manifest.air, manifest.balls);
     this.trackers = new Set();
     this.onShot = null;                  // callback(result) when a tracker finishes
     this.tracker = { postStep: () => this._track() };
-    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.air, this.tracker].filter(Boolean);
+    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.mech, this.air, this.tracker].filter(Boolean);
     for (const h of this.hooks) sim.addHook(h);
     this._init();
   }
@@ -178,13 +272,17 @@ export class Shooter {
     const set = (k) => new Set((M.geom_sets[k] || []).map((g) => sim.geomId(g)));
     this.rig = set('rig'); this.wheelG = set('wheel');
     this.hoodG = new Set((M.geom_sets.hood || M.geom_sets.rig.filter((g) => g.startsWith('hood_s'))).map((g) => sim.geomId(g)));
-    this.j_arm = sim.qadr('arm'); this.v_arm = sim.vadr('arm'); this.j_gap = sim.qadr('gap');
+    this.j_arm = sim.qadr('arm'); this.v_arm = sim.vadr('arm');
     // bench.py ShooterBench.__init__: angle 0, gap at the POLLEN dwell, the shell placed there
     const S = this.servos.S;
     S.angle.tgt = S.angle.cmd = 0; S.angle.held = undefined;
-    S.gap.tgt = S.gap.cmd = DS.offset(this.D, 'pollen'); S.gap.held = undefined;
-    sim.qpos[this.j_gap] = S.gap.cmd;
-    sim.ctrlv[S.gap.aid] = S.gap.cmd;
+    if (this.mech) this.mech.init(sim);            // the hood seated at POLLEN, its servo commanded there
+    else {
+      this.j_gap = sim.qadr('gap');
+      S.gap.tgt = S.gap.cmd = DS.offset(this.D, 'pollen'); S.gap.held = undefined;
+      sim.qpos[this.j_gap] = S.gap.cmd;
+      sim.ctrlv[S.gap.aid] = S.gap.cmd;
+    }
     sim.forward();
     this.ball_type = 'pollen';
     this.next_ball = 0;
@@ -280,11 +378,18 @@ export class Shooter {
   setRpm(rpm) { this.hub.setRpm(rpm); }
   targetRpm() { return this.hub.targetRpm(); }
   setAngle(arm_deg) { const lim = this.D.angle_travel_deg; this.servos.set('angle', rad(Math.max(-lim, Math.min(lim, arm_deg)))); }
-  setBall(bt, squeeze_mm) { this.ball_type = bt; this.servos.set('gap', DS.offset(this.D, bt, squeeze_mm)); }
+  setBall(bt, squeeze_mm) {
+    this.ball_type = bt;
+    if (this.mech) this.mech.setEnd(bt);           // the hood servo commanded to that ball's end (its preload)
+    else this.servos.set('gap', DS.offset(this.D, bt, squeeze_mm));
+  }
   armDeg() { return deg(this.sim.qpos[this.j_arm]); }
   armTargetDeg() { return deg(this.servos.S.angle.tgt); }
-  gapMm() { return 1000 * this.sim.qpos[this.j_gap]; }
-  gapTargetMm() { return 1000 * this.servos.S.gap.tgt; }
+  /** m: the hood along its travel (the slide's coordinate; on the mechanism, the hood's real displacement along the straight
+   *  POLLEN -> NECTAR line, which its hook path leaves in mid travel). */
+  gapM() { return this.mech ? this.mech.disp(this.sim) : this.sim.qpos[this.j_gap]; }
+  gapMm() { return 1000 * this.gapM(); }
+  gapTargetMm() { return this.mech ? 1000 * this.mech.H.travel[this.mech.end] : 1000 * this.servos.S.gap.tgt; }
   wheelRpm() { return this.hub.wheelRpm(this.sim); }
   get current() { return this.motor ? this.motor.current : 0; }
   get v_batt() { return this.motor ? this.motor.v_batt : 0; }
@@ -298,7 +403,8 @@ export class Shooter {
     return this.hub.ready(tol)
       && Math.abs(s.qpos[this.j_arm] - S.angle.tgt) < rad(this.D.settle_arm_deg ?? 0.25)
       && Math.abs(s.qvel[this.v_arm]) < rad(5.0)
-      && Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < (this.D.settle_gap_mm ?? 0.3) / 1000;
+      && (this.mech ? this.mech.dist(s, this.mech.end) < (this.D.settle_gap_mm ?? 0.3) / 1000 && this.mech.speed(s) < this.mech.H.settle_mps
+        : Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < (this.D.settle_gap_mm ?? 0.3) / 1000);
   }
 
   waitReady(limit_s = 3.0, tol) {
@@ -319,7 +425,8 @@ export class Shooter {
    *  Visual only. Call once per frame before stepping. */
   poseMocaps() {
     const s = this.sim, mc = this.M.mocaps || {}, m = s.m, h = this.D.height_m;
-    const arm = s.qpos[this.j_arm], gap = s.qpos[this.j_gap];
+    if (this.mech) this.mech.pose(s);
+    const arm = s.qpos[this.j_arm], gap = this.gapM();
     const quatX = (a) => [Math.cos(a / 2), Math.sin(a / 2), 0, 0];
     const K = this.M.mocap_kin || {};
     if (K.v2lift) {   // the v2 lift's servo crank and its link, from the crank's stop angle (tools/v2_visuals.py table)
@@ -414,7 +521,7 @@ export class Shooter {
     if (C.cell) return this.cellStart(ball);
     const h = this.D.height_m;
     const { pos, vdir } = C.inject === 'feed_column' ? DS.feedStart(this.D, ball.type)
-      : DS.mouth(this.D, ball.type, this.armDeg(), this.sim.qpos[this.j_gap]);
+      : DS.mouth(this.D, ball.type, this.armDeg(), this.gapM());
     const j = this._jitter();
     if (this.jitter && this.D.flags && this.D.flags.bore_feed && this.D.flags.bore_play) {   // anywhere in the free disc
       const rr = Math.sqrt(this.rand.uniform(0, 1)) * DS.borePlay(this.D, ball.type), th = this.rand.uniform(0, 2 * Math.PI);
@@ -517,7 +624,10 @@ export class Shooter {
       const X = s.xpos, q = 3 * bb.body;
       if (Math.hypot(X[q] - Q.axle[0], X[q + 1] - Q.axle[1], X[q + 2] - Q.axle[2]) < 0.35) this.park(bb, k);
     });
-    const c = [E.pos[0] + (jit ? U(-J.dx, J.dx) : 0), E.pos[1] + (E.radius - r) - (jit ? U(0, J.gap) : 0), E.pos[2] + (jit ? U(-J.dz, J.dz) : 0)];
+    const dxm = E.dx ?? J.dx;                       // E.dx: the ball's own free play across the bore (export_topspin START_DX -1)
+    const c = [E.pos[0] + (jit ? U(-dxm, dxm) : 0), E.pos[1] + (E.radius - r), 0];
+    if (E.ring) c[1] = Math.min(c[1], E.ring[0] + Math.sqrt(Math.max(0, (E.ring[1] - r) ** 2 - c[0] ** 2)) - 0.0002);   // off-centre: seated on the curved wall
+    c[1] -= jit ? U(0, J.gap) : 0; c[2] = E.pos[2] + (jit ? U(-J.dz, J.dz) : 0);
     const hub = s.qpos[s.qadr(Q.hub_joint)];
     let comp = 0;
     Q.seg_joints.forEach((jn, i) => {               // the ray from the axle along segment i: where it first meets the ball

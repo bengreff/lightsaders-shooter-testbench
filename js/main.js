@@ -206,9 +206,10 @@ function onShot(r) {
 }
 
 // ------------------------------------------------------------------ the loop
-let last = performance.now(), budget = 0, statT = last, statSim = 0, frames = 0, uiT = 0, chartT = 0;
+let last = performance.now(), budget = 0, statT = last, statSim = 0, frames = 0, uiT = 0, chartT = 0, drawT = 0, behind = false;
 const CHUNK = 25;              // steps between trail samples and parking checks (5 ms simulated)
 const FRAME_MS = 14;           // physics budget per animation frame; beyond it the sim runs slower than asked
+const DRAW_MS_BEHIND = 33;     // Ben 2026-10-29 (0.6x, laggy): while the physics is behind, draw at most ~30 fps so it gets the time
 
 function frame(now) {
   const sim = app.sim, B = app.shooter, ts = sim.timestep;
@@ -230,17 +231,20 @@ function frame(now) {
     if (done % CHUNK) app.view.sampleTrails(sim);
     B.parkAllFlown();
     app.prof.phys += performance.now() - t0; app.prof.steps += done;
-    budget = done < want ? 0 : budget - done * ts;
+    behind = done < want;
+    budget = behind ? 0 : budget - done * ts;
     statSim += done * ts;
   }
   if (now - statT > 500) {
     app.achieved = statSim / ((now - statT) / 1000); app.fps = frames / ((now - statT) / 1000);
     statT = now; statSim = 0; frames = 0;
   }
-  const tr0 = performance.now();
-  app.view.sync(sim);
-  app.view.render();
-  app.prof.draw += performance.now() - tr0; app.prof.frames++;
+  if (!behind || app.s.paused || now - drawT >= DRAW_MS_BEHIND) {
+    drawT = now; const tr0 = performance.now();
+    app.view.sync(sim);
+    app.view.render();
+    app.prof.draw += performance.now() - tr0; app.prof.frames++;
+  }
   if (now - uiT > 100) { uiT = now; liveUi(); }
   if (now - chartT > 66) { chartT = now; app.strip.draw(); }
   if (app.shotDirty) { app.shotDirty = false; renderShot(); renderStats(); }
@@ -363,6 +367,10 @@ function liveUi() {
   $('l-rpm').textContent = `${fmt(B.wheelRpm(), 0).padStart(5)} / ${fmt(B.targetRpm(), 0)} rpm`;
   $('l-hood').textContent = `${sgn(B.armDeg(), 2).padStart(6)} / ${sgn(B.armTargetDeg(), 2)} deg`;
   $('l-gap').textContent = `${sgn(B.gapMm(), 2).padStart(6)} / ${sgn(B.gapTargetMm(), 2)} mm`;
+  const hm = B.mech;                                  // the hood on its real mechanism: its servo
+  $('k-hsv').style.display = hm ? '' : 'none';
+  $('l-gap').previousElementSibling.textContent = hm ? 'hood travel' : 'gap cam';
+  if (hm) $('l-hsv').textContent = `${sgn(hm.tau, 2)} N m (${fmt(100 * Math.abs(hm.tau) / hm.H.servo.stall, 0)} % stall), gears ${fmt(hm.meshTorque, 2)}, link ${sgn(hm.f_link, 0)} N`;
   $('l-motor').textContent = B.motor ? `${fmt(B.current, 2)} A, battery ${fmt(B.v_batt, 2)} V${B.M.controller.v10 ? `, lift ${fmt(B.lift.current, 2)} A` : ''}` : '-';
   const st = s.paused ? 'PAUSED' : app.tracker ? 'FIRING' : B.settled() ? 'READY' : 'SETTLING';
   const badge = $('l-state'); badge.textContent = st; badge.className = 'badge ' + st.toLowerCase();

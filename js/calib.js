@@ -12,6 +12,9 @@
 
 export const RPMS = [1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3700, 4000, 4400];
 export const ARMS_STEP = 4.0;
+/** the calibration's hood angles: -T..T in ARMS_STEP steps WITH the end itself (stepping from -T alone stopped short of +T,
+ *  e.g. 14.5 of 17.5, and TARGET then extrapolated the top of the range: wild solutions near the highest exits). */
+export function armGrid(T) { const a = []; for (let k = 0; -T + k * ARMS_STEP < T - 1e-9; k++) a.push(-T + k * ARMS_STEP); a.push(T); return a; }
 
 // ------------------------------------------------------------------ B-spline (FITPACK bispev semantics)
 function span(t, k, n, x) {                 // knot interval l with t[l] <= x < t[l+1], k <= l < n - k - 1
@@ -150,7 +153,7 @@ export class CalMap {
  *  Async: yields to the event loop every shot so a page or worker stays responsive. -> calibration object ('interp'). */
 export async function measureGrid(shooter, onProgress = () => {}, per = 2, rpms = RPMS, shouldStop = () => false) {
   const B = shooter, T = B.D.angle_travel_deg;
-  const arms = []; for (let k = 0; -T + k * ARMS_STEP <= T + 1e-9; k++) arms.push(-T + k * ARMS_STEP);   // np.arange(-T, T, 4)
+  const arms = armGrid(T);
   const n = 2 * rpms.length * arms.length * per; let i = 0;
   const rows = [];
   B.setBall('pollen'); B.setAngle(arms[0]); B.spinUp(rpms[0]);
