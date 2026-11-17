@@ -1,9 +1,9 @@
 [
  {
-  "id": "onehood_v3m",
-  "folder": "onehood_v3m",
-  "label": "One hood v3, middle curvature (adopted 2026-11-03): full CAD + hood mechanism",
+  "id": "onehood_v5",
+  "folder": "onehood_v5",
+  "label": "Turret v5 (one servo, contact parts)",
   "group": "Design",
-  "describe": "Turret v3 step 4: the FULL CAD, drawn on the bodies it moves with (export_v3_cad_scene.py; drawn only except the hood's mechanism). Frame: the ring with its 2 NECTAR teeth, plywood plates, shafts and bearings, 5203 motor and its end cup, HTD and GT2 belts and pulleys, plate tie, 3208 swivel, hood servo, crankshaft, fixings. Hood: the one-print hood on its 4 rollers, the angle servo on its B rail. The moving hood teeth (orange) turn with the angle slider and the herringbone angle pinion turns with them. The hood MOVES ON ITS REAL MECHANISM (export_v3_mech_scene.py, the model of turret_v3_mech.py): a free planar body guided only by its rollers in the plates' hook slots (contacts, rolling friction 0.01), driven by the 25-2 Torque servo as a DC motor behind its position loop through the 34T/52T gears (0.28 mm backlash, tooth friction), the crank and the 41.3 mm link (pin friction); POLLEN = the servo commanded past the seat to press the hood in with its 1.12 N m preload, NECTAR 0.57. The ball's loads act on this mechanism every shot. Contact model underneath (what the ball touches): 1 Hogback(s) + 6 steel discs (bottom forward, HTD 16:16), the feed's top squishy wheel geared 1:4 off the flywheel motor, the short bore ring (one part with the NECTAR rails, which ride a crowned 4 mm band at constant radius), the concave POLLEN hood (out 22 mm for NECTAR) with its curved entry piece, and comb-finger tips about the axle (angle slider = exit 50-85 deg). Each ball starts squeezed between the squishy and the ring, rolling up."
+  "describe": "Turret v5 (Ben 2026-11-16), contact geometry only: one motor (flywheel + the squishy geared off it, as v4c) and ONE servo. Every hood part swings about the flywheel axle. POLLEN hood: a lower half (entry piece + 2 side teeth, on a hard stop) and a top half (1 central tooth, the servo); NECTAR: 2 static side teeth on the ring + 1 central tooth the POLLEN hood pulls. The angle slider sets the exit inside each ball's zone; changing the ball swings the POLLEN hood up over the wheel."
  }
 ]

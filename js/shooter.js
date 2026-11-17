@@ -75,6 +75,27 @@ export class Servos {
   }
 }
 
+/** Turret v5 (export_topspin.py V5): ONE servo turns the POLLEN top half (joint `arm`) about the flywheel axle; the POLLEN
+ *  lower half and the NECTAR central tooth follow it through lost motion (piecewise-linear maps of the servo angle, deg ->
+ *  deg), held rigid like the servo. Runs after Servos.preStep (the hook order). */
+export class V5Chain {
+  constructor(spec) { this.spec = spec; this.theta0 = spec.theta0_deg; }
+  onLoad(sim) {
+    this.qa = sim.qadr(this.spec.servo_joint);
+    this.F = this.spec.followers.map((f) => ({ q: sim.qadr(f.joint), v: sim.vadr(f.joint), k: f.knots_deg.map(([a, b]) => [rad(a), rad(b)]) }));
+  }
+  static map(K, x) {
+    if (x <= K[0][0]) return K[0][1];
+    for (let i = 1; i < K.length; i++) if (x <= K[i][0]) return K[i - 1][1] + (x - K[i - 1][0]) / (K[i][0] - K[i - 1][0]) * (K[i][1] - K[i - 1][1]);
+    return K[K.length - 1][1];
+  }
+  place(sim) { const th = sim.qpos[this.qa]; for (const f of this.F) { sim.qpos[f.q] = V5Chain.map(f.k, th); sim.qvel[f.v] = 0; } }
+  preStep(sim) {
+    const th = sim.qpos[this.qa], dt = sim.timestep;
+    for (const f of this.F) { const q = V5Chain.map(f.k, th); sim.qvel[f.v] = (q - sim.qpos[f.q]) / dt; sim.qpos[f.q] = q; }
+  }
+}
+
 /** The robot's lift servo (bench.py lift_step): continuous rotation on the 6 V rail through its belt speed-up onto the
  *  lift wheel; the same straight torque-speed line as the motor, BRAKE when off. */
 export class LiftServo {
@@ -249,11 +270,13 @@ export class Shooter {
     this.servos = new Servos(C.servos);
     this.lift = C.lift ? new LiftServo(C.lift) : C.v10 ? new V10Lift(C.v10, this) : null;
     this.mech = C.hood_mech ? new HoodMech(C.hood_mech) : null;   // the hood on its real mechanism (turret v3), else a servo-set slide
+    this.passive = C.passive_hood || null;   // turret v4p: the slide is free, sprung onto the POLLEN seat; nothing commands it
+    this.chain = C.v5_chain ? new V5Chain(C.v5_chain) : null;   // turret v5: one servo, the followers on lost motion
     this.air = new Air(manifest.air, manifest.balls);
     this.trackers = new Set();
     this.onShot = null;                  // callback(result) when a tracker finishes
     this.tracker = { postStep: () => this._track() };
-    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.mech, this.air, this.tracker].filter(Boolean);
+    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.chain, this.mech, this.air, this.tracker].filter(Boolean);
     for (const h of this.hooks) sim.addHook(h);
     this._init();
   }
@@ -277,7 +300,13 @@ export class Shooter {
     const S = this.servos.S;
     S.angle.tgt = S.angle.cmd = 0; S.angle.held = undefined;
     if (this.mech) this.mech.init(sim);            // the hood seated at POLLEN, its servo commanded there
-    else {
+    else if (this.chain) {                         // v5: the servo at POLLEN's middle exit, the followers placed from it
+      this._arm = 0;
+      S.angle.tgt = S.angle.cmd = rad(this.chain.theta0.pollen); sim.qpos[this.j_arm] = S.angle.cmd; this.chain.place(sim);
+    } else if (this.passive) {                       // v4p: the hood resting on its POLLEN seat
+      this.j_gap = sim.qadr('gap'); this.v_gap = sim.vadr('gap');
+      sim.qpos[this.j_gap] = this.passive.seat_m; sim.qvel[this.v_gap] = 0;
+    } else {
       this.j_gap = sim.qadr('gap');
       S.gap.tgt = S.gap.cmd = DS.offset(this.D, 'pollen'); S.gap.held = undefined;
       sim.qpos[this.j_gap] = S.gap.cmd;
@@ -377,19 +406,26 @@ export class Shooter {
   // ------------------------------------------------------------------ commands (bench.py)
   setRpm(rpm) { this.hub.setRpm(rpm); }
   targetRpm() { return this.hub.targetRpm(); }
-  setAngle(arm_deg) { const lim = this.D.angle_travel_deg; this.servos.set('angle', rad(Math.max(-lim, Math.min(lim, arm_deg)))); }
+  setAngle(arm_deg) {
+    const lim = this.D.angle_travel_deg, a = Math.max(-lim, Math.min(lim, arm_deg));
+    if (this.chain) { this._arm = a; this.servos.set('angle', rad(this.chain.theta0[this.ball_type] + a)); return; }   // v5: inside the ball's zone
+    this.servos.set('angle', rad(a));
+  }
   setBall(bt, squeeze_mm) {
     this.ball_type = bt;
+    if (this.chain) { this.setAngle(this._arm ?? 0); return; }   // v5: the one servo swings to the ball's zone (same slider setting)
     if (this.mech) this.mech.setEnd(bt);           // the hood servo commanded to that ball's end (its preload)
-    else this.servos.set('gap', DS.offset(this.D, bt, squeeze_mm));
+    else if (!this.passive) this.servos.set('gap', DS.offset(this.D, bt, squeeze_mm));   // v4p: the ball moves the hood itself
   }
-  armDeg() { return deg(this.sim.qpos[this.j_arm]); }
-  armTargetDeg() { return deg(this.servos.S.angle.tgt); }
+  armDeg() { return deg(this.sim.qpos[this.j_arm]) - (this.chain ? this.chain.theta0[this.ball_type] : 0); }   // v5: relative to the zone's middle
+  armTargetDeg() { return deg(this.servos.S.angle.tgt) - (this.chain ? this.chain.theta0[this.ball_type] : 0); }
+  /** v5: the one servo's angle (deg of hood rotation about the axle). */
+  servoDeg() { return deg(this.sim.qpos[this.j_arm]); }
   /** m: the hood along its travel (the slide's coordinate; on the mechanism, the hood's real displacement along the straight
    *  POLLEN -> NECTAR line, which its hook path leaves in mid travel). */
-  gapM() { return this.mech ? this.mech.disp(this.sim) : this.sim.qpos[this.j_gap]; }
+  gapM() { return this.mech ? this.mech.disp(this.sim) : this.chain ? 0 : this.sim.qpos[this.j_gap]; }
   gapMm() { return 1000 * this.gapM(); }
-  gapTargetMm() { return this.mech ? 1000 * this.mech.H.travel[this.mech.end] : 1000 * this.servos.S.gap.tgt; }
+  gapTargetMm() { return this.chain ? 0 : this.mech ? 1000 * this.mech.H.travel[this.mech.end] : this.passive ? 1000 * this.passive.seat_m : 1000 * this.servos.S.gap.tgt; }
   wheelRpm() { return this.hub.wheelRpm(this.sim); }
   get current() { return this.motor ? this.motor.current : 0; }
   get v_batt() { return this.motor ? this.motor.v_batt : 0; }
@@ -404,6 +440,8 @@ export class Shooter {
       && Math.abs(s.qpos[this.j_arm] - S.angle.tgt) < rad(this.D.settle_arm_deg ?? 0.25)
       && Math.abs(s.qvel[this.v_arm]) < rad(5.0)
       && (this.mech ? this.mech.dist(s, this.mech.end) < (this.D.settle_gap_mm ?? 0.3) / 1000 && this.mech.speed(s) < this.mech.H.settle_mps
+        : this.chain ? true
+        : this.passive ? Math.abs(s.qpos[this.j_gap] - this.passive.seat_m) < (this.D.settle_gap_mm ?? 0.3) / 1000 && Math.abs(s.qvel[this.v_gap]) < this.passive.settle_mps
         : Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < (this.D.settle_gap_mm ?? 0.3) / 1000);
   }
 
@@ -758,6 +796,7 @@ export class ShotTracker {
     const jam = (!this.taken) || last === null || B.sim.time - this.t0 >= S.max_s;
     const out = { type: this.bt, t: this.t0, jam, taken: this.taken, arm_deg: this.arm0, gap_mm: this.gap0,
       rpm_target: this.target_rpm, rpm_at_feed: this.rpm0, inject_overlap_mm: 1000 * this.deep, ball: this.ball.name, ...this.meta };
+    { const o = 3 * this.ball.body, X = B.sim.xpos; out.ball_end = [X[o], X[o + 1], X[o + 2]]; }   // where the ball is when the shot ends (a jam: where it stopped)
     if (this.draw) out.ball_draw = this.draw;
     if (!jam) {
       const [t, p, v, w] = last;

@@ -1,7 +1,7 @@
 # Lightsaders BIOBUZZ shooter testbench
 
-An interactive simulation of our FTC team's proposed turret shooter for the 2026-27 BIOBUZZ season: a belted Hogback
-flywheel under a concentric, servo-swung hood, fed straight up the turret's bore.
+An interactive simulation of our FTC team's turret shooter (v5) for the 2026-27 BIOBUZZ season: one flywheel, a two-part
+POLLEN hood and a NECTAR hood that all turn about the flywheel axle, one servo for every change, fed straight up the turret's bore.
 
 **Open the app:** https://bengreff.github.io/lightsaders-shooter-testbench/
 

@@ -59,9 +59,26 @@ async function boot() {
     const opts = app.variants.filter((v) => v.group === g).map((v) => `<option value="${v.id}" title="${v.describe}">${g ? g + ': ' : ''}${v.label}</option>`).join('');
     return g ? `<optgroup label="${g}">${opts}</optgroup>` : opts;
   }).join('');
-  const want = new URLSearchParams(location.search).get('variant') || app.variants[0].id;
+  const q = new URLSearchParams(location.search), want = q.get('variant') || app.variants[0].id;   // read before loadVariant rewrites the URL
   $('variant').value = want;
   await loadVariant(want);
+  {                                                    // ?ball=nectar&arm=-15.5 (direct mode), ?servo=100 (turret v5: hold the one servo there), ?view=1&zoom=2
+    if (q.get('ball')) app.s.ball = q.get('ball');
+    if (q.get('arm') !== null) { app.s.mode = 'direct'; app.s.arm = +q.get('arm'); }
+    if (q.get('ball') || q.get('arm') !== null) { app._cmdKey = null; apply(); }
+    if (q.get('servo') !== null && app.shooter.chain) { app.holdServo = +q.get('servo'); app.shooter.servos.set('angle', app.holdServo * Math.PI / 180); }
+    if (q.get('snap') !== null && app.shooter.chain) {   // v5: put the servo (and its followers) at the target now, no slew (stills)
+      const S = app.shooter.servos.S.angle; S.cmd = S.tgt; app.sim.qpos[S.qadr] = S.cmd; app.shooter.chain.place(app.sim); app.sim.forward();
+    }
+    if (q.get('zoom') !== null) app.zoom = +q.get('zoom');
+    if (q.get('view') !== null) setView(+q.get('view'));
+    if (q.get('az') !== null || q.get('look') !== null) {  // ?az=&el=&look=x,y,z (m, page frame): aim the camera at a detail (stills)
+      const [, az0, el0, d0] = VIEWS[app.s.view], V = app.manifest?.view, h = app.manifest ? app.manifest.design.height_m : 0.3;
+      app.view.setView({ az: +(q.get('az') ?? az0), el: +(q.get('el') ?? el0), dist: d0 * (V?.dist_scale ?? 1) / (app.zoom || 1),
+        lookat: q.get('look') ? q.get('look').split(',').map(Number) : (V?.lookat || [0, -0.03, h - 0.04]) });
+    }
+    syncUi();
+  }
   fetch('assets/about.md', { cache: 'no-cache' }).then((r) => r.ok ? r.text() : '').then((t) => { $('aboutBody').innerHTML = markdown(t); });
   requestAnimationFrame(frame);
 }
@@ -163,6 +180,7 @@ function apply() {
   if (B.lift) B.lift.press_n = s.lift_n;
   B.jitter = s.jitter;
   B.setBallSpread(s.vary ? Object.keys(B.M.controller.ball_spread || BALL_SPREAD) : null);
+  if (app.holdServo !== undefined && B.chain) B.servos.set('angle', app.holdServo * Math.PI / 180);   // ?servo= (v5 transit views)
 }
 
 // ------------------------------------------------------------------ per step: firing (testbench.py advance) and sampling
@@ -365,11 +383,11 @@ function liveUi() {
   else { const p = predicted(s.ball, arm, rpm); sol.textContent = p ? `predicted: ${fmt(p.speed, 2)} m/s at ${fmt(p.elevation, 1)} deg` : 'no calibration: no prediction'; }
   sol.classList.toggle('bad', !ok);
   $('l-rpm').textContent = `${fmt(B.wheelRpm(), 0).padStart(5)} / ${fmt(B.targetRpm(), 0)} rpm`;
-  $('l-hood').textContent = `${sgn(B.armDeg(), 2).padStart(6)} / ${sgn(B.armTargetDeg(), 2)} deg`;
+  $('l-hood').textContent = `${sgn(B.armDeg(), 2).padStart(6)} / ${sgn(B.armTargetDeg(), 2)} deg` + (B.chain ? `  (servo ${B.servoDeg().toFixed(1)})` : '');
   $('l-gap').textContent = `${sgn(B.gapMm(), 2).padStart(6)} / ${sgn(B.gapTargetMm(), 2)} mm`;
   const hm = B.mech;                                  // the hood on its real mechanism: its servo
   $('k-hsv').style.display = hm ? '' : 'none';
-  $('l-gap').previousElementSibling.textContent = hm ? 'hood travel' : 'gap cam';
+  $('l-gap').previousElementSibling.textContent = hm ? 'hood travel' : B.passive ? 'hood (sprung)' : 'gap cam';
   if (hm) $('l-hsv').textContent = `${sgn(hm.tau, 2)} N m (${fmt(100 * Math.abs(hm.tau) / hm.H.servo.stall, 0)} % stall), gears ${fmt(hm.meshTorque, 2)}, link ${sgn(hm.f_link, 0)} N`;
   $('l-motor').textContent = B.motor ? `${fmt(B.current, 2)} A, battery ${fmt(B.v_batt, 2)} V${B.M.controller.v10 ? `, lift ${fmt(B.lift.current, 2)} A` : ''}` : '-';
   const st = s.paused ? 'PAUSED' : app.tracker ? 'FIRING' : B.settled() ? 'READY' : 'SETTLING';
@@ -498,7 +516,7 @@ function setView(i) {
   app.s.view = ((i % VIEWS.length) + VIEWS.length) % VIEWS.length;
   const [, az, el, dist, look] = VIEWS[app.s.view];
   const h = app.manifest ? app.manifest.design.height_m : 0.3, V = app.manifest?.view;   // a variant may aim the presets (the v2 feed: between cell and wheel)
-  app.view.setView({ az, el, dist: look ? dist : dist * (V?.dist_scale ?? 1), lookat: look || V?.lookat || [0, -0.03, h - 0.04] });
+  app.view.setView({ az, el, dist: (look ? dist : dist * (V?.dist_scale ?? 1)) / (app.zoom || 1), lookat: look || V?.lookat || [0, -0.03, h - 0.04] });
   syncUi();
 }
 
