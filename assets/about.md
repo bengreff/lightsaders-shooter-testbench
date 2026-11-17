@@ -14,15 +14,19 @@ mechanisms that move the hood pieces. The side plates, fasteners and mounts come
   - **NECTAR hood** (blue): face radius 135.85 mm, section radius 50.6 mm, 86 mm wide. Two static side teeth on a solid
     support with feet down to the turret gear, and one central tooth that rests and slides on that support.
   - The POLLEN parts sit 0.5 mm under the NECTAR faces: the NECTAR hood backs the POLLEN hood.
-- **One pin per side does two jobs:** it rides a slot in the lower half's hub (it lifts the lower half up and brings it
-  back over the top) and it pushes the NECTAR arm (the hook).
-- **The lower half is latched:** a small lever on its hub drops by its own weight into a slot in a frame block, so the
-  balls can't push it forward; the pin trips the lever in the last 3 deg of its slot, just before it lifts the lower half.
+- **One pin per side does three jobs:** it rides a slot in the lower half's hub (it lifts the lower half up and brings it
+  back over the top), it works the lower half's latch, and it pushes the NECTAR arm (the hook).
+- **The lower half is latched, positively (no springs, no magnets, no gravity):** a pawl on its hub has a closed track the
+  pin runs in. While POLLEN shoots, the track is concentric with the axle, so the pin stops the pawl turning either way and its
+  hook stays behind the end of a fixed ring; the balls' push goes through the hook into the ring and the pawl's pivot. To switch,
+  the track bends: the pin turns the pawl and draws the hook in under the ring. While carried, the ring keeps the pawl turned, so
+  the lower half is locked to the top half (about 1.5 deg of play) and cannot drop over the top.
 - **One servo does every change:**
   - 0-31 deg: POLLEN exit angle (about 56-88 deg), only the central top tooth moves;
-  - 31-34 deg: the pin trips the latch; from 34 deg it lifts the lower half; both swing up over the flywheel;
+  - 31-38 deg: the pin turns the latch open; from 38 deg it lifts the lower half; both swing up over the flywheel;
   - from 182 deg they push NECTAR's central tooth out: NECTAR exit angle about 58-88 deg.
-- **Switching POLLEN to NECTAR** (or back) takes about 1.0 s: 182 deg of hood at 180 deg/s, from the servo's no-load speed.
+- **Switching POLLEN to NECTAR** (or back) takes about 1.1 s (0.9 to 1.25 s): 151 to 213 deg of hood at the servo's speed
+  (goBILDA 2000-0025-0002 at 4.8 V, through 1.33 : 1), slowed a little by the hood parts' weight.
 
 ## Measured in this simulation
 | | |

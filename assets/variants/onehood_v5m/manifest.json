@@ -60,7 +60,7 @@
   "V5_NS": 42.9,
   "V5_SPEED": 180.0,
   "V5_MECH": 1,
-  "V5_LFROM": 34.0
+  "V5_LFROM": 38.0
  },
  "mujoco_version": "3.13.0",
  "scene": "scene.xml",
@@ -1539,12 +1539,12 @@
        0.0
       ],
       [
-       34.0,
+       38.0,
        0.0
       ],
       [
        400.0,
-       366.0
+       362.0
       ]
      ],
      "why": "POLLEN lower half: on its hard stop, pulled by the top half past the POLLEN highest exit"
@@ -1589,59 +1589,111 @@
        0.0
       ],
       [
-       31.0,
-       0.0
-      ],
-      [
        31.3,
        0.0
       ],
       [
-       31.55,
-       1.6000000000000003
+       31.579166666666666,
+       -0.01401783181347604
       ],
       [
-       31.8,
-       3.4000000000000017
+       31.858333333333334,
+       -0.05601130074602163
       ],
       [
-       32.05,
-       5.699999999999996
+       32.1375,
+       -0.1258005843167138
       ],
       [
-       32.3,
-       10.19999999999998
+       32.416666666666664,
+       -0.22308683409905405
       ],
       [
-       32.55,
-       13.199999999999969
+       32.69583333333333,
+       -0.3474534554358218
       ],
       [
-       32.8,
-       14.399999999999965
+       32.975,
+       -0.4983678913613418
       ],
       [
-       33.05,
-       15.199999999999962
+       33.25416666666667,
+       -0.6751839030921729
       ],
       [
-       33.3,
-       15.99999999999996
+       33.53333333333333,
+       -0.8771443373207919
       ],
       [
-       33.55,
-       16.599999999999966
+       33.8125,
+       -1.1033843684623112
       ],
       [
-       33.8,
-       17.199999999999974
+       34.09166666666667,
+       -1.3529352019703778
+      ],
+      [
+       34.37083333333334,
+       -1.624728222864168
+      ],
+      [
+       34.65,
+       -1.917599571701783
+      ],
+      [
+       34.92916666666667,
+       -2.2302951284050883
+      ],
+      [
+       35.208333333333336,
+       -2.561475882594378
+      ],
+      [
+       35.4875,
+       -2.9097236674364093
+      ],
+      [
+       35.766666666666666,
+       -3.273547232452534
+      ],
+      [
+       36.045833333333334,
+       -3.6513886292821347
+      ],
+      [
+       36.325,
+       -4.041629883056722
+      ],
+      [
+       36.604166666666664,
+       -4.442599920816693
+      ],
+      [
+       36.88333333333333,
+       -4.852581727302341
+      ],
+      [
+       37.1625,
+       -5.269819697476733
+      ],
+      [
+       37.44166666666666,
+       -5.69252715429603
+      ],
+      [
+       37.72083333333333,
+       -6.1188939995349285
+      ],
+      [
+       38.0,
+       -6.547094464905072
       ],
       [
        400.0,
-       17.199999999999974
+       -6.547094464905072
       ]
      ],
-     "why": "the lower half's latch lever (on its hub), tripped by the pin"
+     "why": "the lower half's latch pawl (on its hub), turned by the pin in its track"
     }
    ],
    "theta0_deg": {
@@ -1653,7 +1705,7 @@
      0.0,
      31.0
     ],
-    "lower_from": 34.0,
+    "lower_from": 38.0,
     "nectar_from": 182.0,
     "nectar": [
      182.0,
@@ -1698,7 +1750,7 @@
   "v5_mech": {
    "pin_psi_deg": 282.0551276612332,
    "slot_deg": [
-    248.91456435392942,
+    244.91456435392942,
     281.19569096853695
    ],
    "nectar_arm_deg": 28.25,
@@ -1712,20 +1764,29 @@
    "planes_u": {
     "top": 41.0,
     "lower": 51.0,
-    "nectar": 63.5,
+    "nectar": 64.25,
     "t": 6.35
    },
    "latch": {
+    "kind": "pawl + track for the pin + fixed ring",
     "pivot_sketch": [
-     -20.67,
-     -7.52
+     -19.09,
+     -19.09
     ],
-    "trip_deg": 31.3,
-    "pickup_deg": 34.0,
-    "lever_turn_deg": 17.2,
-    "tooth_in_mm": 6.5,
-    "push_holds_it": true,
-    "gravity_holds_it": true
+    "lock_to_servo": 31.3,
+    "pickup_deg": 38.0,
+    "pawl_turn_deg": 6.55,
+    "hook_retract_mm": 3.0,
+    "hook_engage_mm": 2.66,
+    "ring_r": [
+     34.34,
+     42.34
+    ],
+    "blocking_arm_min_mm": 11.7,
+    "cam_pressure_angle_max_deg": 20.0,
+    "carry_play_deg": 1.29,
+    "carry_locked": true,
+    "why": "the pin blocks the pawl while POLLEN shoots, turns it out to switch, and the ring keeps it out while carried"
    }
   },
   "v5": {
@@ -1778,7 +1839,7 @@
   "id": "onehood_v5m",
   "label": "Turret v5 + hood mechanisms (wider lanes)",
   "group": "Design",
-  "describe": "Turret v5 (2026-11-16), contact geometry only: one motor (flywheel + the squishy geared off it, as v4c) and ONE servo. Every hood part swings about the flywheel axle. POLLEN hood: a lower half (entry piece + 2 side teeth, on a hard stop) and a top half (1 central tooth, the servo); NECTAR: 2 static side teeth on the ring + 1 central tooth the POLLEN hood pulls. The angle slider sets the exit inside each ball's zone; changing the ball swings the POLLEN hood up over the wheel."
+  "describe": "Turret v5 with its hood mechanisms (2026-11-16): one motor (flywheel + the squishy geared off it) and ONE servo through a sector gear. Every hood part turns about the flywheel axle on bearings. POLLEN hood (yellow): a latched lower half and a geared top half joined by one pin per side; NECTAR hood (blue): static side teeth on a solid support and a central tooth the same pin pushes. Changing the ball swings the POLLEN hood up over the wheel (about 1 s)."
  },
  "parts": [
   {
@@ -1811,5 +1872,6 @@
    "body": "ncen",
    "note": "pulled by the POLLEN hood past the parking angle"
   }
- ]
+ ],
+ "calibration": "calibration.json"
 }
