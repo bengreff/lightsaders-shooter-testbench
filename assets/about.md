@@ -1,39 +1,42 @@
 # Lightsaders BIOBUZZ turret v5
 
-Our FTC team's turret shooter for the 2026-27 BIOBUZZ season, for both balls, simulated. This page shows the **contact
-geometry only**: the parts that touch a ball, the flywheel, the feed wheel and the turret's bore. Structure, bearings and
-fasteners come later.
+Our FTC team's turret shooter for the 2026-27 BIOBUZZ season, for both balls, simulated: the parts that touch a ball and the
+mechanisms that move the hood pieces. The side plates, fasteners and mounts come later.
 
 ## The design
-- **One motor:** a goBILDA Hogback flywheel (96 mm, steel discs) and, geared off the same motor (1 : 3.8), a squishy feed
-  wheel that pushes each ball up the turret's bore against its front wall and into the flywheel.
-- **Every hood part turns about the flywheel axle**, and every ball-contact face is a surface of revolution about that
-  axle, so each ball sees the same gap all along its path:
-  - **POLLEN hood:** face radius 118.3 mm about the axle, trough section radius 39.9 mm. Two parts: a lower half (the
-    entry plus two side teeth) that rests on a hard stop and continues the bore wall, and a top half (one central tooth).
-  - **NECTAR hood:** face radius 135.85 mm, section radius 50.6 mm. Two static side teeth that are part of the bore ring,
-    and one central tooth.
-  - The POLLEN parts slide 1 mm under the NECTAR face: NECTAR fills the space behind POLLEN with no gap.
+- **One motor:** a goBILDA Hogback flywheel (96 mm, steel discs) and, geared off the same motor (1 : 3.8), a squishy feed wheel
+  that pushes each ball up the turret's bore against its front wall and into the flywheel.
+- **One servo** turns a 40-tooth sector gear on the flywheel axle (1.333 : 1), so 213 deg of hood travel is 284 deg of servo.
+- **Every hood part turns about the flywheel axle** on ball bearings, with arms on both sides of the flywheel, and every
+  ball-contact face is a surface of revolution about that axle:
+  - **POLLEN hood** (yellow): face radius 118.3 mm, trough section radius 39.9 mm, 73 mm wide. Two parts: a lower half (the
+    entry plus two side teeth) and a top half (one central tooth, on the gear).
+  - **NECTAR hood** (blue): face radius 135.85 mm, section radius 50.6 mm, 86 mm wide. Two static side teeth on a solid
+    support with feet down to the turret gear, and one central tooth that rests and slides on that support.
+  - The POLLEN parts sit 0.5 mm under the NECTAR faces: the NECTAR hood backs the POLLEN hood.
+- **One pin per side does two jobs:** it rides a slot in the lower half's hub (it lifts the lower half up and brings it
+  back over the top) and it pushes the NECTAR arm (the hook).
+- **The lower half is latched:** a small lever on its hub drops by its own weight into a slot in a frame block, so the
+  balls can't push it forward; the pin trips the lever in the last 3 deg of its slot, just before it lifts the lower half.
 - **One servo does every change:**
-  - 0-31 deg: POLLEN exit angle (56-87 deg), only the central top tooth moves;
-  - at 31 deg the top tooth picks up the lower half; both swing up over the flywheel, out of NECTAR's way;
-  - from 182 deg they pull NECTAR's central tooth out: NECTAR exit angle 58-88 deg.
+  - 0-31 deg: POLLEN exit angle (about 56-88 deg), only the central top tooth moves;
+  - 31-34 deg: the pin trips the latch; from 34 deg it lifts the lower half; both swing up over the flywheel;
+  - from 182 deg they push NECTAR's central tooth out: NECTAR exit angle about 58-88 deg.
+- **Switching POLLEN to NECTAR** (or back) takes about 1.0 s: 182 deg of hood at 180 deg/s, from the servo's no-load speed.
 
-## Measured in this simulation (40 shots per setting, about 7 m/s)
-| | exit angle | speed spread | angle spread |
-|---|---|---|---|
-| POLLEN lowest / middle / highest | 56.4 / 71.0 / 86.7 deg | 0.32 / 0.35 / 0.34 % | 0.86 / 0.83 / 0.73 deg |
-| NECTAR lowest / middle / highest | 57.7 / 72.0 / 87.9 deg | 0.30 / 0.26 / 0.24 % | 0.86 / 0.28 / 0.45 deg |
-
-No jams in those 240 shots. TARGET mode's own check (30 random targets per ball): POLLEN 1.6 % / 1.4 deg rms error, NECTAR
-1.7 % / 1.1 deg.
+## Measured in this simulation
+| | |
+|---|---|
+| Calibration grid (both balls, 1600-4400 rpm, every hood setting) | 468 shots, 0 jams |
+| TARGET mode check, 30 random targets per ball | POLLEN 1.0 % speed / 1.3 deg rms error; NECTAR 1.2 % / 0.7 deg |
+| Mechanisms over the whole servo travel | no part touches another; every part at least 1.2 mm from the balls |
 
 ## What is NOT verified
-- Nothing here has been built. The hood parts' couplings (the lower half's stop and pick-up, the NECTAR tooth's pull) are
-  not modelled: those parts simply follow the servo angle. The servo's speed is assumed (300 deg/s).
-- POLLEN can jam at low flywheel speeds (1600-2000 rpm) in the calibration's shot sequence; not yet explained.
+- Nothing here has been built. The hood parts, the latch and the pin follow the servo angle in this model; their contacts
+  are checked as solids (no overlaps over the whole servo travel), not simulated as forces.
+- The squishy's stiffness is fitted to one hand measurement; its deepest squash (33 mm here) is a guess.
 - The ball, tread and air laws are the testbench's (calibrated against the goBILDA StarterBot launcher's shots and our
-  ball measurements: POLLEN rebounds 40 cm from 1 m); this geometry has never met a real ball.
+  ball measurements); this geometry has never met a real ball.
 
 ## How this page works
 MuJoCo 3.13 compiled to WebAssembly runs the same model file as our Python bench; three.js draws it. TARGET mode solves

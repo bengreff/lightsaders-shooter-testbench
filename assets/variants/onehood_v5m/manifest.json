@@ -4,42 +4,46 @@
  "overrides": {
   "HOG": [
    [
-    -12,
-    12
+    -12.0,
+    12.0
    ]
   ],
   "cN": 4.15,
   "cP": 2.2,
   "A_FIX": 34.5,
-  "TRAVEL": 29,
+  "TRAVEL": 29.0,
   "OV": 5.5,
   "TAPER": 2.5,
-  "RT": 10,
-  "PT": 10,
-  "RING_FRONT": 28,
-  "RING_T": 6,
-  "RING_TOP": 135,
-  "SQ_GAP": 67,
+  "RT": 10.0,
+  "PT": 10.0,
+  "RING_FRONT": 28.0,
+  "RING_T": 6.0,
+  "RING_TOP": 135.0,
+  "SQ_GAP": 62.0,
   "SQ_Y": 100.7,
   "ENTRY_P": 20.25,
   "ENTRY_N": 10.5,
+  "SQ_K": 0.233,
+  "SQ_CAP": 1.154,
+  "SQ_STOP": 33.0,
   "SQ_RATIO": 3.8,
-  "START_V": 0,
+  "START_V": 0.0,
   "SQ_RIDGES": 6,
+  "SQ_TIPMAX": 1,
   "PRAD_EXIT": 1.1,
-  "RELIEF": 2,
-  "PGAP": 2,
+  "RELIEF": 2.0,
+  "PGAP": 2.0,
   "PRAD": 1.1,
-  "START_DX": -1,
-  "START_DZ": 2,
+  "START_DX": -1.0,
+  "START_DZ": 2.0,
   "ONEHOOD": 1,
   "OH_WIDE": 1.339,
-  "NT_OV": 2,
-  "TIP_BLEND": 12,
+  "NT_OV": 2.0,
+  "TIP_BLEND": 12.0,
   "RECESS": 0.5,
   "ARC_R": 125.5,
-  "ARC_A0": 38,
-  "N_DIR": 38,
+  "ARC_A0": 38.0,
+  "N_DIR": 38.0,
   "N_RET": 19.3,
   "BASE_RET": 22.5,
   "DN_BALL": 90.43,
@@ -48,19 +52,27 @@
   "NT_CLAMP": 1,
   "NT_V4": 1,
   "NT_A1": 69.5,
-  "V5": 1
+  "V5": 1,
+  "V5_GAP": 0.5,
+  "V5_PC": 14.7,
+  "V5_PS": 36.4,
+  "V5_NC": 16.9,
+  "V5_NS": 42.9,
+  "V5_SPEED": 180.0,
+  "V5_MECH": 1,
+  "V5_LFROM": 34.0
  },
  "mujoco_version": "3.13.0",
  "scene": "scene.xml",
  "files": {},
  "timestep": 0.0001,
  "counts": {
-  "nq": 100,
-  "nv": 90,
+  "nq": 102,
+  "nv": 92,
   "nu": 26,
-  "nbody": 42,
-  "ngeom": 773,
-  "nmesh": 700
+  "nbody": 44,
+  "ngeom": 823,
+  "nmesh": 750
  },
  "balls": [
   {
@@ -407,6 +419,10 @@
    "nta_41",
    "nta_42",
    "nta_43",
+   "nta_44",
+   "nta_45",
+   "nta_46",
+   "nta_47",
    "v5sideb_0",
    "v5sideb_1",
    "v5sideb_2",
@@ -487,6 +503,10 @@
    "ntb_41",
    "ntb_42",
    "ntb_43",
+   "ntb_44",
+   "ntb_45",
+   "ntb_46",
+   "ntb_47",
    "v5collar_0",
    "v5collar_1",
    "v5collar_2",
@@ -537,6 +557,11 @@
    "v5collar_47",
    "v5collar_48",
    "v5collar_49",
+   "v5collar_50",
+   "v5collar_51",
+   "v5collar_52",
+   "v5collar_53",
+   "v5collar_54",
    "v5ncen_0",
    "v5ncen_1",
    "v5ncen_2",
@@ -1102,6 +1127,10 @@
    "nta_41",
    "nta_42",
    "nta_43",
+   "nta_44",
+   "nta_45",
+   "nta_46",
+   "nta_47",
    "v5sideb_0",
    "v5sideb_1",
    "v5sideb_2",
@@ -1182,6 +1211,10 @@
    "ntb_41",
    "ntb_42",
    "ntb_43",
+   "ntb_44",
+   "ntb_45",
+   "ntb_46",
+   "ntb_47",
    "v5ncen_0",
    "v5ncen_1",
    "v5ncen_2",
@@ -1286,14 +1319,14 @@
     "encoder_joint": "motor",
     "actuator": "fly_motor",
     "spin": 1,
-    "tpr": 28,
+    "tpr": 28.0,
     "P": 331.6499,
-    "I": 3,
-    "D": 80,
+    "I": 3.0,
+    "D": 80.0,
     "F": 11.7025,
-    "target_rpm": 3500,
+    "target_rpm": 3500.0,
     "radius": 0.048,
-    "ratio": 1
+    "ratio": 1.0
    }
   ],
   "motor": {
@@ -1306,13 +1339,13 @@
    "T_fric": 0.004022346368715084,
    "battery_v": 12.6,
    "battery_r": 0.08,
-   "ratio": 1,
+   "ratio": 1.0,
    "belt_r": [
     0.012732395447351628,
     0.012732395447351628
    ],
-   "belt_k": 300000,
-   "belt_c": 15,
+   "belt_k": 300000.0,
+   "belt_c": 15.0,
    "why": "5203-2402-0001 (vendor), HTD 16T:24T to the flywheel; the squishy wheel geared off the same shaft"
   },
   "feeder": null,
@@ -1320,9 +1353,9 @@
    "angle": {
     "actuator": "angle_servo",
     "joint": "arm",
-    "speed": 5.235987755982989,
+    "speed": 3.141592653589793,
     "rigid": true,
-    "deadband": 0,
+    "deadband": 0.0,
     "why": "turret v5: the one hood servo, rigid at the command (floating parts)"
    }
   },
@@ -1356,71 +1389,71 @@
     "sqs23"
    ],
    "seg_deg": [
-    0,
-    15,
-    30,
-    45,
-    60,
-    75,
-    90,
-    105,
-    120,
-    135,
-    150,
-    165,
-    180,
-    195,
-    210,
-    225,
-    240,
-    255,
-    270,
-    285,
-    300,
-    315,
-    330,
-    345
+    0.0,
+    15.0,
+    30.0,
+    45.0,
+    60.0,
+    75.0,
+    90.0,
+    105.0,
+    120.0,
+    135.0,
+    150.0,
+    165.0,
+    180.0,
+    195.0,
+    210.0,
+    225.0,
+    240.0,
+    255.0,
+    270.0,
+    285.0,
+    300.0,
+    315.0,
+    330.0,
+    345.0
    ],
    "axle": [
-    0,
-    -0.08345000000000001,
+    0.0,
+    -0.07845,
     0.24930000000000002
    ],
    "R": 0.04445,
-   "stop": 0.0254,
+   "stop": 0.033,
    "ratio": 3.8,
    "fly_joint": "fly",
-   "start_speed": 0,
+   "start_speed": 0.0,
    "seg_R": [
-    0.039450000000000006,
-    0.0407,
-    0.04195,
-    0.0432,
-    0.039450000000000006,
-    0.0407,
-    0.04195,
-    0.0432,
-    0.039450000000000006,
-    0.0407,
-    0.04195,
-    0.0432,
-    0.039450000000000006,
-    0.0407,
-    0.04195,
-    0.0432,
-    0.039450000000000006,
-    0.0407,
-    0.04195,
-    0.0432,
-    0.039450000000000006,
-    0.0407,
-    0.04195,
-    0.0432
+    0.04442916666666667,
+    0.041325,
+    0.042575,
+    0.043825,
+    0.04442916666666667,
+    0.041325,
+    0.042575,
+    0.043825,
+    0.04442916666666667,
+    0.041325,
+    0.042575,
+    0.043825,
+    0.04442916666666667,
+    0.041325,
+    0.042575,
+    0.043825,
+    0.04442916666666667,
+    0.041325,
+    0.042575,
+    0.043825,
+    0.04442916666666667,
+    0.041325,
+    0.042575,
+    0.043825
    ],
    "entry": {
     "pollen": {
      "pos": [
-      0,
+      0.0,
       -0.00845,
       0.22905
      ],
@@ -1433,7 +1466,7 @@
     },
     "nectar": {
      "pos": [
-      0,
+      0.0,
       -0.0182,
       0.2388
      ],
@@ -1450,29 +1483,29 @@
     "dx": 0.002,
     "gap": 0.0005,
     "speed": 0.2,
-    "spin": 3,
+    "spin": 3.0,
     "phase": true
    },
    "why": "the ball pressed between the squishy wheel and the bore's front wall, rolling up it at its own rolling speed"
   },
   "park": {
-   "x": 3,
+   "x": 3.0,
    "dx": 0.12,
    "z": 0.05
   },
   "shot": {
    "take_s": 1.2,
    "max_s": 1.8,
-   "min_speed": 2,
+   "min_speed": 2.0,
    "gap_s": 0.02
   },
   "lift": null,
   "cell": null,
-  "spin_up_limit_s": 6,
+  "spin_up_limit_s": 6.0,
   "inject_jitter": {
    "pos": [
     0.002,
-    0,
+    0.0,
     0.008
    ],
    "speed": 0.2
@@ -1502,16 +1535,16 @@
      "joint": "plow",
      "knots_deg": [
       [
-       0,
-       0
+       0.0,
+       0.0
       ],
       [
-       31,
-       0
+       34.0,
+       0.0
       ],
       [
-       400,
-       369
+       400.0,
+       366.0
       ]
      ],
      "why": "POLLEN lower half: on its hard stop, pulled by the top half past the POLLEN highest exit"
@@ -1520,19 +1553,95 @@
      "joint": "ncen",
      "knots_deg": [
       [
-       0,
-       0
+       0.0,
+       0.0
       ],
       [
-       182,
-       0
+       182.0,
+       0.0
       ],
       [
-       400,
-       218
+       400.0,
+       218.0
       ]
      ],
      "why": "NECTAR central tooth: at home (NECTAR lowest exit) until the POLLEN hood is parked, then pulled"
+    },
+    {
+     "joint": "v5pin",
+     "knots_deg": [
+      [
+       0.0,
+       0.0
+      ],
+      [
+       400.0,
+       -533.3333333333333
+      ]
+     ],
+     "why": "the servo's pinion: -1.333 x the hood gear"
+    },
+    {
+     "joint": "v5latch",
+     "knots_deg": [
+      [
+       0.0,
+       0.0
+      ],
+      [
+       31.0,
+       0.0
+      ],
+      [
+       31.3,
+       0.0
+      ],
+      [
+       31.55,
+       1.6000000000000003
+      ],
+      [
+       31.8,
+       3.4000000000000017
+      ],
+      [
+       32.05,
+       5.699999999999996
+      ],
+      [
+       32.3,
+       10.19999999999998
+      ],
+      [
+       32.55,
+       13.199999999999969
+      ],
+      [
+       32.8,
+       14.399999999999965
+      ],
+      [
+       33.05,
+       15.199999999999962
+      ],
+      [
+       33.3,
+       15.99999999999996
+      ],
+      [
+       33.55,
+       16.599999999999966
+      ],
+      [
+       33.8,
+       17.199999999999974
+      ],
+      [
+       400.0,
+       17.199999999999974
+      ]
+     ],
+     "why": "the lower half's latch lever (on its hub), tripped by the pin"
     }
    ],
    "theta0_deg": {
@@ -1541,33 +1650,33 @@
    },
    "zones_deg": {
     "pollen": [
-     0,
-     31
+     0.0,
+     31.0
     ],
-    "lower_from": 31,
-    "nectar_from": 182,
+    "lower_from": 34.0,
+    "nectar_from": 182.0,
     "nectar": [
-     182,
-     213
+     182.0,
+     213.0
     ]
    }
   }
  },
  "design": {
-  "height_m": 0,
+  "height_m": 0.0,
   "gate_tol": 0.003,
   "angle_travel_deg": 15.5,
-  "inject_speed": 0,
+  "inject_speed": 0.0,
   "squeeze_pollen_mm": 2.2,
   "squeeze_nectar_mm": 4.15,
   "offset": {
-   "pollen": 0,
-   "nectar": 0
+   "pollen": 0.0,
+   "nectar": 0.0
   },
   "R_WHEEL": 0.048,
   "D_POLLEN": 0.0725,
   "D_NECTAR": 0.092,
-  "angle_ratio": 1,
+  "angle_ratio": 1.0,
   "take_s": 1.2,
   "max_s": 1.8,
   "pulley_motor": 16,
@@ -1583,8 +1692,41 @@
    -4.432762622344741
   ],
   "nectar_move": {
-   "dir_deg": 38,
+   "dir_deg": 38.0,
    "mm": 19.3
+  },
+  "v5_mech": {
+   "pin_psi_deg": 282.0551276612332,
+   "slot_deg": [
+    248.91456435392942,
+    281.19569096853695
+   ],
+   "nectar_arm_deg": 28.25,
+   "pinion_axis_sketch": [
+    -40.21733326374634,
+    33.746349508543325
+   ],
+   "centre_mm": 52.5,
+   "ratio": 1.3333333333333333,
+   "servo_travel_deg": 284.0,
+   "planes_u": {
+    "top": 41.0,
+    "lower": 51.0,
+    "nectar": 63.5,
+    "t": 6.35
+   },
+   "latch": {
+    "pivot_sketch": [
+     -20.67,
+     -7.52
+    ],
+    "trip_deg": 31.3,
+    "pickup_deg": 34.0,
+    "lever_turn_deg": 17.2,
+    "tooth_in_mm": 6.5,
+    "push_holds_it": true,
+    "gravity_holds_it": true
+   }
   },
   "v5": {
    "face_pollen_mm": 118.3,
@@ -1593,31 +1735,31 @@
    "gap_nectar_mm": 87.85,
    "lanes_pollen": [
     [
-     -10.5,
-     10.5
+     -14.7,
+     14.7
     ],
     [
-     11.5,
-     26
+     15.7,
+     36.4
     ]
    ],
    "lanes_nectar": [
     [
-     -13,
-     13
+     -16.9,
+     16.9
     ],
     [
-     14,
-     33
+     17.9,
+     42.9
     ]
    ],
-   "release_home_deg": 36,
-   "pollen_top_deg": 33,
-   "nectar_central_deg": 39,
-   "side_end_deg": 36,
-   "entry_join_deg": 72,
-   "pollen_release_home_deg": 38,
-   "pollen_side_end_deg": 38,
+   "release_home_deg": 36.0,
+   "pollen_top_deg": 33.0,
+   "nectar_central_deg": 39.0,
+   "side_end_deg": 36.0,
+   "entry_join_deg": 72.0,
+   "pollen_release_home_deg": 38.0,
+   "pollen_side_end_deg": 38.0,
    "round2_wall": true
   }
  },
@@ -1625,7 +1767,7 @@
  "mocap_kin": {},
  "view": {
   "lookat": [
-   0,
+   0.0,
    -0.03,
    0.28
   ],
@@ -1633,8 +1775,8 @@
   "cad": true
  },
  "variant": {
-  "id": "onehood_v5",
-  "label": "Turret v5 (one servo, contact parts)",
+  "id": "onehood_v5m",
+  "label": "Turret v5 + hood mechanisms (wider lanes)",
   "group": "Design",
   "describe": "Turret v5 (2026-11-16), contact geometry only: one motor (flywheel + the squishy geared off it, as v4c) and ONE servo. Every hood part swings about the flywheel axle. POLLEN hood: a lower half (entry piece + 2 side teeth, on a hard stop) and a top half (1 central tooth, the servo); NECTAR: 2 static side teeth on the ring + 1 central tooth the POLLEN hood pulls. The angle slider sets the exit inside each ball's zone; changing the ball swings the POLLEN hood up over the wheel."
  },
@@ -1669,6 +1811,5 @@
    "body": "ncen",
    "note": "pulled by the POLLEN hood past the parking angle"
   }
- ],
- "calibration": "calibration.json"
+ ]
 }
