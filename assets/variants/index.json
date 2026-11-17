@@ -4,6 +4,6 @@
   "folder": "onehood_v5m",
   "label": "Turret v5 + hood mechanisms (wider lanes)",
   "group": "Design",
-  "describe": "Turret v5 with its hood mechanisms (2026-11-16): one motor (flywheel + the squishy geared off it) and ONE servo through a sector gear. Every hood part turns about the flywheel axle on bearings. POLLEN hood (yellow): a latched lower half and a geared top half joined by one pin per side; NECTAR hood (blue): static side teeth on a solid support and a central tooth the same pin pushes. Changing the ball swings the POLLEN hood up over the wheel (about 1 s)."
+  "describe": "Turret v5 with its hood mechanisms (2026-11-16): one motor (flywheel + the squishy geared off it) and ONE servo through a sector gear. Every hood part turns about the flywheel axle on bearings. POLLEN hood (yellow): a latched lower half and a geared top half joined by one pin per side; NECTAR hood (blue): static side teeth on a solid support and a central tooth the same pin pushes. Changing the ball swings the POLLEN hood up over the wheel (0.48-0.64 s with the goBILDA 25-3 Speed servo at 6 V, modelled; it slows where the lower half lands). The flywheel runs the team's speed loop (fitted to the robot's logs). MIXED fires POLLEN, NECTAR, ... in real time."
  }
 ]

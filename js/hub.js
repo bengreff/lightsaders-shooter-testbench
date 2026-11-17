@@ -8,7 +8,7 @@
 
 export class Hub {
   constructor(hub, wheels, direct = true) {
-    this.sample_s = hub.sample_s; this.ringN = hub.ring;
+    this.sample_s = hub.sample_s; this.ringN = hub.ring; this.quantize = !!hub.quantize;
     this.spec = wheels;
     this.direct = direct;              // false: an electrical Motor hook reads w.u
   }
@@ -28,7 +28,8 @@ export class Hub {
     if (t + 1e-12 < this.next_sample) return;
     this.next_sample = t + this.sample_s;
     for (const w of this.W) {
-      w.ring.push([t, w.spin * sim.qpos[w.qadr] * w.tpr / (2 * Math.PI)]);
+      const ticks = w.spin * sim.qpos[w.qadr] * w.tpr / (2 * Math.PI);
+      w.ring.push([t, this.quantize ? Math.floor(ticks) : ticks]);          // quantize: whole encoder ticks, as the hub counts them
       if (w.ring.length > this.ringN) w.ring.shift();
       if (w.ring.length > 1) {
         const a = w.ring[0], b = w.ring[w.ring.length - 1];
@@ -70,7 +71,8 @@ export class Motor {
     const om = M.spin * sim.qvel[this.vadr];
     this.v_batt = M.battery_v - M.battery_r * Math.abs(this.current);
     this.current = (u * this.v_batt - M.Ke * om) / M.R;
-    const tq = M.Kt * this.current - M.T_fric * (om > 1e-6 ? 1 : om < -1e-6 ? -1 : 0);   // = bench.py FRICTION_BAND
+    const sg = om > 1e-6 ? 1 : om < -1e-6 ? -1 : 0;                                   // = bench.py FRICTION_BAND
+    const tq = M.Kt * this.current - M.T_fric * sg - (M.drag_l1 || 0) * om;           // drag_l1: the fitted viscous part (FLY_LAW 1)
     this.torque = tq;
     sim.ctrlv[this.aid] = M.spin * tq;
   }

@@ -68,8 +68,9 @@ async function boot() {
     if (q.get('ball') || q.get('arm') !== null) { app._cmdKey = null; apply(); }
     if (q.get('servo') !== null && app.shooter.chain) { app.holdServo = +q.get('servo'); app.shooter.servos.set('angle', app.holdServo * Math.PI / 180); }
     if (q.get('snap') !== null && app.shooter.chain) {   // v5: put the servo (and its followers) at the target now, no slew (stills)
-      const S = app.shooter.servos.S.angle; S.cmd = S.tgt; app.sim.qpos[S.qadr] = S.cmd; app.shooter.chain.place(app.sim); app.sim.forward();
+      const S = app.shooter.servos.S.angle; S.cmd = S.sp = S.tgt; S.w = 0; S.Iprev = null; app.sim.qpos[S.qadr] = S.cmd; app.shooter.chain.place(app.sim); app.sim.forward();
     }
+    if (q.get('mixed') !== null) { app.s.burst = Math.max(2, +q.get('mixed') || 4); startMixed(); }   // ?mixed=4: a MIXED burst on load
     if (q.get('zoom') !== null) app.zoom = +q.get('zoom');
     if (q.get('view') !== null) setView(+q.get('view'));
     if (q.get('az') !== null || q.get('look') !== null) {  // ?az=&el=&look=x,y,z (m, page frame): aim the camera at a detail (stills)
@@ -193,7 +194,14 @@ function fireStep(sim) {
   if (app.recov && B.settled()) {                       // recovery: from the last shot's exit until ready again
     app.recov.shot.recovery_s = sim.time - app.recov.t; app.recov = null; app.logDirty = true;
   }
-  if (app.tracker || app.s.paused || !(app.queue > 0 || app.s.auto) || !B.settled()) return;
+  const MX = app.mixed;
+  if (MX) {                                             // MIXED burst: POLLEN, NECTAR, ... each as soon as the hood can take it
+    if (app.tracker || app.s.paused) return;            // the previous ball is still in the hood: nothing moves yet
+    if (MX.i >= MX.seq.length) { mixedDone(); return; }
+    const nb = MX.seq[MX.i];
+    if (app.s.ball !== nb) { app.s.ball = nb; app._cmdKey = null; apply(); syncUi(); }   // the hood starts its swing now
+    if (!B.readyToFeed(nb)) return;
+  } else if (app.tracker || app.s.paused || !(app.queue > 0 || app.s.auto) || !B.settled()) return;
   const s = app.s, bt = s.ball, [arm, rpm] = app.cmd;
   const tgt = s.mode === 'target' && app.map ? { speed: s.speed, elevation: s.elev } : predicted(bt, arm, rpm);
   const now = sim.time;
@@ -201,8 +209,27 @@ function fireStep(sim) {
   tr.meta.interval = app.lastFeed !== null && app.queueActive ? now - app.lastFeed : null;
   tr.meta.variant = app.variant.id; tr.meta.mode = s.mode;
   app.lastFeed = now; app.queueActive = true;
-  if (app.queue > 0) app.queue--;
+  if (MX) { tr.meta.mixed = MX.i; MX.feeds.push(now); MX.i++; MX.trackers.push(tr); }
+  else if (app.queue > 0) app.queue--;
   app.view.startTrail(tr.ball.body, now);
+}
+
+/** MIXED: alternate POLLEN and NECTAR (burst-size balls), the hood switching between them at its servo's real speed. */
+function startMixed() {
+  const s = app.s, n = Math.max(2, s.burst);
+  app.queue = 0; s.auto = false; s.slow = 1;            // real time
+  app.mixed = { seq: Array.from({ length: n }, (_, i) => (i % 2 ? 'nectar' : 'pollen')), i: 0, feeds: [], trackers: [] };
+  $('mixedRes').textContent = `mixed burst: ${app.mixed.seq.map((b) => b[0].toUpperCase()).join(' ')} running...`;
+  syncUi();
+}
+function mixedDone() {
+  const MX = app.mixed; app.mixed = null;
+  const R = MX.trackers.map((t) => t.result), ex = R.map((r) => (r && !r.jam ? r.t_exit : null));
+  const ok = ex.filter((x) => x !== null), jams = R.filter((r) => !r || r.jam).length;
+  const errs = R.filter((r) => r && !r.jam && r.target).map((r) => `${sgn(100 * r.speed_err, 1)}%/${sgn(r.elev_err, 1)}`);
+  $('mixedRes').textContent = `mixed burst ${MX.seq.map((b) => b[0].toUpperCase()).join(' ')}: first exit to last ${ok.length > 1 ? fmt(ok[ok.length - 1] - ok[0], 2) : '-'} s`
+    + ` (first feed to last exit ${ok.length ? fmt(ok[ok.length - 1] - MX.feeds[0], 2) : '-'} s), gaps ${ok.slice(1).map((x, i) => fmt(x - ok[i], 2)).join(' / ')} s`
+    + `${jams ? `, ${jams} JAMMED` : ''}${errs.length ? `; speed/angle error ${errs.join(' ')}` : ''}  (simulated time)`;
 }
 
 let sampleN = 0;
@@ -368,7 +395,7 @@ function syncUi() {
   document.querySelectorAll('[data-ball]').forEach((b) => b.classList.toggle('on', b.dataset.ball === s.ball));
   document.querySelectorAll('[data-mode]').forEach((b) => { b.classList.toggle('on', b.dataset.mode === s.mode); if (b.dataset.mode === 'target') b.disabled = !app.map; });
   $('sliders-target').hidden = s.mode !== 'target'; $('sliders-direct').hidden = s.mode !== 'direct';
-  $('burstN').textContent = `x${s.burst}`;
+  $('burstN').textContent = `x${s.burst}`; $('mixedN').textContent = `x${Math.max(2, s.burst)}`;
   $('auto').classList.toggle('on', s.auto);
   $('pause').textContent = s.paused ? 'Run (P)' : 'Pause (P)';
   document.querySelectorAll('#views button').forEach((b, i) => b.classList.toggle('on', b.id === 'cadbtn' ? !!s.cad : i === s.view));
@@ -392,7 +419,7 @@ function liveUi() {
   $('l-motor').textContent = B.motor ? `${fmt(B.current, 2)} A, battery ${fmt(B.v_batt, 2)} V${B.M.controller.v10 ? `, lift ${fmt(B.lift.current, 2)} A` : ''}` : '-';
   const st = s.paused ? 'PAUSED' : app.tracker ? 'FIRING' : B.settled() ? 'READY' : 'SETTLING';
   const badge = $('l-state'); badge.textContent = st; badge.className = 'badge ' + st.toLowerCase();
-  $('l-queue').textContent = `queue ${app.queue}${s.auto ? ' +auto' : ''}`;
+  $('l-queue').textContent = app.mixed ? `mixed ${app.mixed.i} / ${app.mixed.seq.length}` : `queue ${app.queue}${s.auto ? ' +auto' : ''}`;
   $('perf').textContent = `${fmt(app.fps, 0)} fps  ${fmt(app.achieved, 2)}x real time${s.slow > 1 ? ` (slow motion ${s.slow}x)` : ''}`;
   $('footer').textContent = `t ${fmt(app.sim.time, 2)} s   sim ${fmt(app.achieved, 2)}x real time (asked ${fmt(1 / s.slow, 2)}x)   ${app.shooter.balls.length} balls, ${app.manifest.counts.ngeom} geoms`;
 }
@@ -528,11 +555,12 @@ function wireUi() {
   document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => { s.mode = b.dataset.mode; syncUi(); }; });
   $('fire').onclick = fireOne;
   $('burst').onclick = () => { app.queue += s.burst; };
+  $('mixed').onclick = startMixed;
   $('auto').onclick = () => { s.auto = !s.auto; syncUi(); };
-  $('stop').onclick = () => { app.queue = 0; s.auto = false; syncUi(); };
+  $('stop').onclick = () => { app.queue = 0; s.auto = false; app.mixed = null; syncUi(); };
   $('pause').onclick = () => { s.paused = !s.paused; syncUi(); };
   $('resetStats').onclick = () => { app.shots = []; app.shotDirty = app.logDirty = true; };
-  $('resetSim').onclick = () => { app.shooter.reset(); app.view.clearTrails(); app.tracker = null; app.queue = 0; app.recov = null; app.strip.clear(); app.lastFeed = null; };
+  $('resetSim').onclick = () => { app.shooter.reset(); app.view.clearTrails(); app.tracker = null; app.queue = 0; app.mixed = null; app.recov = null; app.strip.clear(); app.lastFeed = null; };
   $('jitter').onchange = () => { s.jitter = $('jitter').checked; };
   $('vary').onchange = () => { s.vary = $('vary').checked; apply(); };
   $('collision').onchange = () => { s.collision = $('collision').checked; app.view.setShowCollision(s.collision); };
@@ -553,6 +581,7 @@ function wireUi() {
     const k = e.key.toLowerCase();
     if (k === ' ') { e.preventDefault(); fireOne(); }
     else if (k === 'b') app.queue += s.burst;
+    else if (k === 'x') startMixed();
     else if (k === 'a') s.auto = !s.auto;
     else if (k === 'r') { app.shots = []; app.shotDirty = app.logDirty = true; }
     else if (k === '1') s.ball = 'pollen';

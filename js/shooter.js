@@ -53,14 +53,83 @@ export class Servos {
     this.S = {};
     for (const [k, s] of Object.entries(this.spec)) {
       this.S[k] = { aid: sim.actuatorId(s.actuator), qadr: sim.qadr(s.joint), vadr: sim.vadr(s.joint), speed: s.speed,
-        deadband: s.deadband || 0, rigid: !!s.rigid, tgt: 0, cmd: 0, held: undefined };
+        deadband: s.deadband || 0, rigid: !!s.rigid, tgt: 0, cmd: 0, held: undefined, model: s.model || null, w: 0, tau: 0, Iprev: null };
     }
   }
   set(k, target) { this.S[k].tgt = target; }
+  /** The servo model's load at hood angle th (rad): [gravity torque the servo must supply (N m, + against +th), inertia (kg m2)],
+   *  each body picked up by its lost motion (slope dphi/dth of its knots). */
+  static load(M, th) {
+    let tg = 0, I = M.J * M.ratio * M.ratio;
+    const x = th * 180 / Math.PI;
+    for (const b of M.bodies) {
+      const K = b.knots_deg; let i = 1; while (i < K.length - 1 && x > K[i][0]) i++;
+      const sl = (K[i][1] - K[i - 1][1]) / (K[i][0] - K[i - 1][0]);
+      if (!(Math.abs(sl) > 1e-9) || x < K[0][0]) continue;          // on its stop: its weight goes into the stop
+      const phi = K[i - 1][1] + (Math.min(x, K[i][0]) - K[i - 1][0]) * sl;
+      tg += b.mass * 9.81 * b.r * Math.cos((b.psi_deg - phi) * Math.PI / 180) * sl; I += b.I * sl * sl;
+    }
+    return [tg, I];
+  }
+  /** Hood angle (rad) to command so the loaded servo comes to rest about th: the weight's steady sag at that angle is added
+   *  (as the robot's calibration table absorbs it); the dead zone stays: the servo stops anywhere within db of the command. */
+  static commandFor(M, th) {
+    const [tg] = Servos.load(M, th);
+    return th + tg / M.ratio / M.stall * M.e_sat / M.ratio;
+  }
+  /** Settle band (rad, hood) of a modelled servo: its dead zone plus 0.1 deg. */
+  static settleTol(M) { return M.db / M.ratio + 0.1 * Math.PI / 180; }
+  /** One step of the modelled servo: DC motor behind its P+D loop (dead zone db), through the gear, the parts' weight and inertia. */
+  static stepModel(M, st, dt) {
+    const r = M.ratio;
+    let e = (st.goal - st.th) * r; e = Math.sign(e) * Math.max(Math.abs(e) - M.db, 0);
+    const ws = st.w * r, V = Math.max(-1, Math.min(1, (e - M.Td * ws) / M.e_sat));
+    const tau = M.stall * (V - ws / M.w0);
+    const [tg, I] = Servos.load(M, st.th);
+    if (st.Iprev !== null && I > st.Iprev * 1.0001) st.w *= st.Iprev / I;   // a part picked up: plastic impact, momentum kept
+    st.Iprev = I;
+    st.w += (tau * r - tg) / I * dt; st.th += st.w * dt; st.tau = tau;
+  }
+  /** The robot's setpoint for a modelled servo, one step. The servo has no position feedback and lags a moving setpoint, so a
+   *  slow zone is stop-and-creep: on the way DOWN through a zone [lo, hi] (where the POLLEN lower half lands on its stops and the
+   *  latch re-engages) the setpoint goes to hi, then creeps through at v_slow, then on to the target (the robot times the same
+   *  sequence from its calibrated move; here the hood's angle triggers it). No profile, or no zone crossed: the setpoint = the target. */
+  static stepSetpoint(M, st, tgt, dt) {
+    const P = M.profile;
+    if (!P || !P.on) { st.sp = tgt; return; }
+    const tol = 1.5 * Math.PI / 180;
+    for (const [lo, hi] of P.zones_down || []) {
+      if (!(tgt < lo && st.th > lo + tol)) continue;                 // this move does not land the hood through this zone
+      if (st.th > hi + tol) { st.sp = hi; return; }                  // full speed to the zone's top
+      st.sp = Math.max(Math.min(st.sp, hi) - P.v_slow * dt, lo - 2 * tol); return;   // creep down through it
+    }
+    st.sp = tgt;
+  }
+  /** Seconds until servo k comes to rest within tol (rad) of its target, by running its model ahead (no model: slew time). */
+  eta(k, tol, max_s = 1.5) {
+    const s = this.S[k];
+    if (!s.model) return Math.abs(s.tgt - s.cmd) / s.speed;
+    tol = tol ?? Servos.settleTol(s.model);
+    const st = { sp: s.sp ?? s.cmd, goal: 0, th: s.cmd, w: s.w, Iprev: s.Iprev, tau: 0 }, dt = 5e-4;
+    let t = 0;
+    while (t < max_s && !(Math.abs(st.th - s.tgt) < tol && Math.abs(st.w) < 5 * Math.PI / 180)) {
+      Servos.stepSetpoint(s.model, st, s.tgt, dt); st.goal = Servos.commandFor(s.model, st.sp); Servos.stepModel(s.model, st, dt); t += dt;
+    }
+    return t;
+  }
   preStep(sim) {
     const dt = sim.timestep;
     for (const k in this.S) {
       const s = this.S[k];
+      if (s.model) {                                  // the modelled servo (v5 hood): its motion from torque, not a slew
+        const st = { sp: s.sp ?? s.cmd, goal: 0, th: s.cmd, w: s.w, Iprev: s.Iprev, tau: s.tau };
+        Servos.stepSetpoint(s.model, st, s.tgt, dt); st.goal = Servos.commandFor(s.model, st.sp);
+        Servos.stepModel(s.model, st, dt);
+        s.sp = st.sp; s.cmd = st.th; s.w = st.w; s.Iprev = st.Iprev; s.tau = st.tau;
+        sim.ctrlv[s.aid] = s.cmd;
+        if (s.rigid) { sim.qpos[s.qadr] = s.cmd; sim.qvel[s.vadr] = s.w; }
+        continue;
+      }
       let tgt = s.tgt;
       if (s.deadband > 0) {
         if (s.held === undefined || Math.abs(tgt - s.held) > s.deadband) s.held = tgt;
@@ -272,6 +341,7 @@ export class Shooter {
     this.mech = C.hood_mech ? new HoodMech(C.hood_mech) : null;   // the hood on its real mechanism (turret v3), else a servo-set slide
     this.passive = C.passive_hood || null;   // turret v4p: the slide is free, sprung onto the POLLEN seat; nothing commands it
     this.chain = C.v5_chain ? new V5Chain(C.v5_chain) : null;   // turret v5: one servo, the followers on lost motion
+    this.leadS = {};                                  // feed -> flywheel time per ball type (ShotTracker.finish)
     this.air = new Air(manifest.air, manifest.balls);
     this.trackers = new Set();
     this.onShot = null;                  // callback(result) when a tracker finishes
@@ -302,7 +372,7 @@ export class Shooter {
     if (this.mech) this.mech.init(sim);            // the hood seated at POLLEN, its servo commanded there
     else if (this.chain) {                         // v5: the servo at POLLEN's middle exit, the followers placed from it
       this._arm = 0;
-      S.angle.tgt = S.angle.cmd = rad(this.chain.theta0.pollen); sim.qpos[this.j_arm] = S.angle.cmd; this.chain.place(sim);
+      S.angle.tgt = S.angle.cmd = S.angle.sp = rad(this.chain.theta0.pollen); S.angle.w = 0; S.angle.Iprev = null; sim.qpos[this.j_arm] = S.angle.cmd; this.chain.place(sim);
     } else if (this.passive) {                       // v4p: the hood resting on its POLLEN seat
       this.j_gap = sim.qadr('gap'); this.v_gap = sim.vadr('gap');
       sim.qpos[this.j_gap] = this.passive.seat_m; sim.qvel[this.v_gap] = 0;
@@ -405,6 +475,14 @@ export class Shooter {
 
   // ------------------------------------------------------------------ commands (bench.py)
   setRpm(rpm) { this.hub.setRpm(rpm); }
+  /** Mixed bursts: may the next ball (type bt) be fed now? The wheel is ready and the hood (modelled servo) will be at rest
+   *  before the ball reaches it (the feed's lead time, measured on the last ball of that type, less `margin` s); without a
+   *  measured lead, or a modelled servo, only when everything has settled (as FIRE). */
+  readyToFeed(bt, margin = 0.03) {
+    const S = this.servos.S.angle, lead = this.leadS[bt] ?? this.M.controller.shot.lead_s?.[bt];
+    if (!this.chain || !S.model || !(lead > margin)) return this.settled();
+    return this.hub.ready(this.D.gate_tol) && this.servos.eta('angle') <= lead - margin;
+  }
   targetRpm() { return this.hub.targetRpm(); }
   setAngle(arm_deg) {
     const lim = this.D.angle_travel_deg, a = Math.max(-lim, Math.min(lim, arm_deg));
@@ -437,7 +515,7 @@ export class Shooter {
     tol = tol ?? this.D.gate_tol;
     const s = this.sim, S = this.servos.S;
     return this.hub.ready(tol)
-      && Math.abs(s.qpos[this.j_arm] - S.angle.tgt) < rad(this.D.settle_arm_deg ?? 0.25)
+      && Math.abs(s.qpos[this.j_arm] - S.angle.tgt) < (S.angle.model ? Servos.settleTol(S.angle.model) : rad(this.D.settle_arm_deg ?? 0.25))
       && Math.abs(s.qvel[this.v_arm]) < rad(5.0)
       && (this.mech ? this.mech.dist(s, this.mech.end) < (this.D.settle_gap_mm ?? 0.3) / 1000 && this.mech.speed(s) < this.mech.H.settle_mps
         : this.chain ? true
@@ -772,6 +850,7 @@ export class ShotTracker {
     const B = this.B, s = B.sim, ball = this.ball, S = B.M.controller.shot;
     const t = s.time;
     const [on, fN, wh] = B.touching(ball);
+    if (wh && !this.taken) this.t_taken = t;              // the flywheel has the ball: the feed's lead time (mixed bursts)
     this.taken = this.taken || wh;
     if (on) this._contacts();
     this.i_peak = Math.max(this.i_peak, Math.abs(B.current)); this.v_min = Math.min(this.v_min, B.v_batt);
@@ -794,6 +873,7 @@ export class ShotTracker {
     const B = this.B, last = this.last, S = B.M.controller.shot;
     B.feed_u = 0; if (B.lift) B.lift.u = 0;
     const jam = (!this.taken) || last === null || B.sim.time - this.t0 >= S.max_s;
+    if (!jam && this.t_taken !== undefined) B.leadS[this.bt] = this.t_taken - this.t0;   // feed to flywheel, this ball type
     const out = { type: this.bt, t: this.t0, jam, taken: this.taken, arm_deg: this.arm0, gap_mm: this.gap0,
       rpm_target: this.target_rpm, rpm_at_feed: this.rpm0, inject_overlap_mm: 1000 * this.deep, ball: this.ball.name, ...this.meta };
     { const o = 3 * this.ball.body, X = B.sim.xpos; out.ball_end = [X[o], X[o + 1], X[o + 2]]; }   // where the ball is when the shot ends (a jam: where it stopped)

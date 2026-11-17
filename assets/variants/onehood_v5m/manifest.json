@@ -59,6 +59,9 @@
   "V5_NC": 16.9,
   "V5_NS": 42.9,
   "V5_SPEED": 180.0,
+  "V5_SV_STALL": 0.918,
+  "V5_SV_PROF": 1,
+  "FLY_LAW": 1,
   "V5_MECH": 1,
   "V5_LFROM": 38.0
  },
@@ -71,8 +74,8 @@
   "nv": 92,
   "nu": 26,
   "nbody": 44,
-  "ngeom": 823,
-  "nmesh": 750
+  "ngeom": 829,
+  "nmesh": 756
  },
  "balls": [
   {
@@ -1310,7 +1313,9 @@
  "controller": {
   "hub": {
    "sample_s": 0.01,
-   "ring": 5
+   "ring": 6,
+   "quantize": true,
+   "why": "REV hub velocity loop (RUN_USING_ENCODER): every 10 ms, whole encoder ticks over the last 50 ms (the logged 43 rpm steps), power = (F target + P err) / 32767; fitted to the meet-1 logs within 38-44 rpm rms (one reading step)"
   },
   "wheels": [
    {
@@ -1320,13 +1325,15 @@
     "actuator": "fly_motor",
     "spin": 1,
     "tpr": 28.0,
-    "P": 331.6499,
-    "I": 3.0,
-    "D": 80.0,
-    "F": 11.7025,
+    "P": 160.0,
+    "I": 0.0,
+    "D": 0.0,
+    "F": 14.476190476190474,
     "target_rpm": 3500.0,
     "radius": 0.048,
-    "ratio": 1.0
+    "ratio": 1.0,
+    "law": "team",
+    "why": "BiobuzzConstants.PIDF (160, 0, 0, 15.2), F x 12 / battery volts at init (BiobuzzTeleopV4), setVelocity(rpm / 60 x 28)"
    }
   ],
   "motor": {
@@ -1334,11 +1341,11 @@
    "actuator": "fly_motor",
    "spin": 1,
    "R": 1.3043478260869565,
-   "Kt": 0.016089385474860336,
-   "Ke": 0.018579609660945174,
-   "T_fric": 0.004022346368715084,
+   "Kt": 0.015652173913043476,
+   "Ke": 0.020584077425213693,
+   "T_fric": 0.014299999999999998,
    "battery_v": 12.6,
-   "battery_r": 0.08,
+   "battery_r": 0.15,
    "ratio": 1.0,
    "belt_r": [
     0.012732395447351628,
@@ -1346,7 +1353,8 @@
    ],
    "belt_k": 300000.0,
    "belt_c": 15.0,
-   "why": "5203-2402-0001 (vendor), HTD 16T:24T to the flywheel; the squishy wheel geared off the same shaft"
+   "why": "5203-2402-0001 as fitted to the 2026-11-09 robot logs (tools/shots/flywheel_sim.py): stall 0.144 N m, free speed 5567 rpm at 12 V, drag 0.0163 N m + 1.2e-5 N m s/rad x w (minus the scene's 0.002 bearing friction), battery 0.15 ohm sag (guessed); negative power plugs the motor (the drop 2380 -> 2000 rpm in 0.15-0.35 s, measured)",
+   "drag_l1": 1.2e-05
   },
   "feeder": null,
   "servos": {
@@ -1356,7 +1364,125 @@
     "speed": 3.141592653589793,
     "rigid": true,
     "deadband": 0.0,
-    "why": "turret v5: the one hood servo, rigid at the command (floating parts)"
+    "why": "turret v5: the one hood servo (25-3 Speed at 6 V), its motion modelled, rigid against the balls (floating parts)",
+    "model": {
+     "sku": "goBILDA 2000-0025-0003 (25-3 Speed) at 6 V",
+     "stall": 0.918,
+     "w0": 11.641346110802179,
+     "ratio": 1.3333333333333333,
+     "e_sat": 0.05235987755982989,
+     "Td": 0.005,
+     "db": 0.005235987755982988,
+     "J": 0.001,
+     "bodies": [
+      {
+       "joint": "plow",
+       "knots_deg": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         38.0,
+         0.0
+        ],
+        [
+         400.0,
+         362.0
+        ]
+       ],
+       "mass": 0.24236684676053927,
+       "r": 0.0640801358153917,
+       "psi_deg": 55.61469073599815,
+       "I": 0.0017483929510848234,
+       "parts": [
+        "v_v5entry 17 g",
+        "v_v5sidea 29 g",
+        "v_v5sideb 29 g",
+        "v_m_lwing 10 g",
+        "v_m_lplate 65 g",
+        "v_m_lbear 4 g",
+        "v_m_lwing_m 10 g",
+        "v_m_lplate_m 65 g",
+        "v_m_lbear_m 4 g",
+        "v_m_pawl_pivot 6 g",
+        "v_m_pawl_pivot_nut 1 g",
+        "v_m_pawl 4 g"
+       ]
+      },
+      {
+       "joint": "arm",
+       "knots_deg": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         400.0,
+         400.0
+        ]
+       ],
+       "mass": 0.19211620130433044,
+       "r": 0.058030270360080356,
+       "psi_deg": 37.77941253400469,
+       "I": 0.0013505801467550227,
+       "parts": [
+        "v_v5top 53 g",
+        "v_m_twing 8 g",
+        "v_m_tplate 45 g",
+        "v_m_tbear 4 g",
+        "v_m_pin 11 g",
+        "v_m_pin_nut 2 g",
+        "v_m_twing_m 8 g",
+        "v_m_tplate_m 43 g",
+        "v_m_tbear_m 4 g",
+        "v_m_pin_m 11 g",
+        "v_m_pin_nut_m 2 g"
+       ]
+      },
+      {
+       "joint": "ncen",
+       "knots_deg": [
+        [
+         0.0,
+         0.0
+        ],
+        [
+         182.0,
+         0.0
+        ],
+        [
+         400.0,
+         218.0
+        ]
+       ],
+       "mass": 0.1668069140639604,
+       "r": 0.0921404083540533,
+       "psi_deg": 35.849969005934376,
+       "I": 0.0019543604219268975,
+       "parts": [
+        "v_v5ncen 42 g",
+        "v_m_nplate 38 g",
+        "v_m_nbear 4 g",
+        "v_m_nplate_m 38 g",
+        "v_m_nbear_m 4 g",
+        "v_m_nstrap 40 g"
+       ]
+      }
+     ],
+     "profile": {
+      "on": true,
+      "v_slow": 4.363323129985824,
+      "zones_down": [
+       [
+        0.5410520681182421,
+        0.7853981633974483
+       ]
+      ],
+      "why": "robot code: on the way down, stop the hood at the lower half's landing + ZONE, creep through at v_slow, then go on (the landing at ~190 instead of ~590 deg/s: ~1/10 of the energy) (rad, rad/s)"
+     },
+     "why": "servo torque = stall x (clip((e - Td w) / e_sat, -1, 1) - w / w0) at its output (e, w servo side, dead zone db), x ratio at the hood; the hood parts' weight m g r cos(psi0 - phi) dphi/dtheta and inertia I dphi/dtheta^2 picked up by their lost motion; the servo's rotor J x ratio^2 (guessed). Vendor: 0.918 N m stall, 0.09 s/60 deg at 6 V (retailer listings); loop gains guessed"
+    }
    }
   },
   "inject": "squish",
@@ -1716,7 +1842,7 @@
  },
  "design": {
   "height_m": 0.0,
-  "gate_tol": 0.003,
+  "gate_tol": 0.03,
   "angle_travel_deg": 15.5,
   "inject_speed": 0.0,
   "squeeze_pollen_mm": 2.2,
@@ -1780,13 +1906,28 @@
     "hook_engage_mm": 2.66,
     "ring_r": [
      34.34,
-     42.34
+     44.34
     ],
     "blocking_arm_min_mm": 11.7,
     "cam_pressure_angle_max_deg": 20.0,
     "carry_play_deg": 1.29,
     "carry_locked": true,
+    "ring_fit_mm": 0.05,
+    "pivot_wall_mm": 4.0,
+    "reinforced": "ring on 3 steel standoffs, its end fitted to the hook (sand / tape at assembly); pin and pivot = 6 mm shoulder screws clamped by nuts; lower hub r 34; rest stops = acetal blocks on steel standoffs",
     "why": "the pin blocks the pawl while POLLEN shoots, turns it out to switch, and the ring keeps it out while carried"
+   }
+  },
+  "v5_servo": {
+   "sku": "goBILDA 2000-0025-0003 (25-3 Speed)",
+   "volts": 6.0,
+   "stall_nm": 0.918,
+   "no_load_deg_s": 667.0,
+   "power": "REV Servo Hub / Servo Power Module / goBILDA 6V injector (R502)",
+   "moving_mass_g": {
+    "plow": 242,
+    "arm": 192,
+    "ncen": 167
    }
   },
   "v5": {
@@ -1839,7 +1980,7 @@
   "id": "onehood_v5m",
   "label": "Turret v5 + hood mechanisms (wider lanes)",
   "group": "Design",
-  "describe": "Turret v5 with its hood mechanisms (2026-11-16): one motor (flywheel + the squishy geared off it) and ONE servo through a sector gear. Every hood part turns about the flywheel axle on bearings. POLLEN hood (yellow): a latched lower half and a geared top half joined by one pin per side; NECTAR hood (blue): static side teeth on a solid support and a central tooth the same pin pushes. Changing the ball swings the POLLEN hood up over the wheel (about 1 s)."
+  "describe": "Turret v5 with its hood mechanisms (2026-11-16): one motor (flywheel + the squishy geared off it) and ONE servo through a sector gear. Every hood part turns about the flywheel axle on bearings. POLLEN hood (yellow): a latched lower half and a geared top half joined by one pin per side; NECTAR hood (blue): static side teeth on a solid support and a central tooth the same pin pushes. Changing the ball swings the POLLEN hood up over the wheel (0.48-0.64 s with the goBILDA 25-3 Speed servo at 6 V, modelled; it slows where the lower half lands). The flywheel runs the team's speed loop (fitted to the robot's logs). MIXED fires POLLEN, NECTAR, ... in real time."
  },
  "parts": [
   {

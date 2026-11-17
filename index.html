@@ -51,9 +51,11 @@
         <div class="slider" data-key="arm" title="Hood angle from its middle position; higher means a steeper shot" data-min="-20" data-max="20" data-step="0.25" data-unit="deg" data-fmt="2" data-sign="1">Hood angle</div>
       </div>
       <div id="solved" class="small mono" title="The wheel speed and hood angle used for this shot, or the shot the calibration predicts"></div>
+      <div id="mixedRes" class="small mono" title="The last MIXED burst, in simulated seconds"></div>
       <div class="actions">
         <button id="fire" class="primary" title="Fire one ball as soon as the shooter is ready">FIRE <kbd>space</kbd></button>
         <button id="burst" title="Fire the burst size of balls, each as soon as the shooter is ready again">BURST <span id="burstN">x6</span> <kbd>B</kbd></button>
+        <button id="mixed" title="POLLEN, NECTAR, POLLEN, NECTAR ... (burst size), in real time: the hood swings to the next ball's zone as soon as the last ball has left it, and the next ball is fed so it reaches the hood as the hood comes to rest">MIXED P N <span id="mixedN">x6</span> <kbd>X</kbd></button>
         <button id="auto" title="Keep firing until STOP">AUTO <kbd>A</kbd></button>
         <button id="stop" title="Cancel queued shots and AUTO">STOP</button>
       </div>
