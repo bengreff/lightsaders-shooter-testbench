@@ -74,8 +74,8 @@
   "nv": 92,
   "nu": 26,
   "nbody": 44,
-  "ngeom": 829,
-  "nmesh": 756
+  "ngeom": 825,
+  "nmesh": 752
  },
  "balls": [
   {
@@ -1914,7 +1914,7 @@
     "carry_locked": true,
     "ring_fit_mm": 0.05,
     "pivot_wall_mm": 4.0,
-    "reinforced": "ring on 3 steel standoffs, its end fitted to the hook (sand / tape at assembly); pin and pivot = 6 mm shoulder screws clamped by nuts; lower hub r 34; rest stops = acetal blocks on steel standoffs",
+    "reinforced": "ring on 3 steel standoffs, its end fitted to the hook (sand / tape at assembly); pin and pivot = 6 mm shoulder screws clamped by nuts; lower hub r 34; rest stops = solid cheeks of the NECTAR support piece",
     "why": "the pin blocks the pawl while POLLEN shoots, turns it out to switch, and the ring keeps it out while carried"
    }
   },
