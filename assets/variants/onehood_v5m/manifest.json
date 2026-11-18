@@ -63,6 +63,7 @@
   "V5_SV_PROF": 1,
   "FLY_LAW": 1,
   "V5_MECH": 1,
+  "V5_FRAME": 1,
   "V5_LFROM": 38.0
  },
  "mujoco_version": "3.13.0",
@@ -74,8 +75,8 @@
   "nv": 92,
   "nu": 26,
   "nbody": 44,
-  "ngeom": 825,
-  "nmesh": 752
+  "ngeom": 841,
+  "nmesh": 768
  },
  "balls": [
   {
@@ -1391,20 +1392,20 @@
          362.0
         ]
        ],
-       "mass": 0.24236684676053927,
-       "r": 0.0640801358153917,
-       "psi_deg": 55.61469073599815,
-       "I": 0.0017483929510848234,
+       "mass": 0.249121562022957,
+       "r": 0.062342658373523346,
+       "psi_deg": 55.61469068688189,
+       "I": 0.00174918574804769,
        "parts": [
         "v_v5entry 17 g",
         "v_v5sidea 29 g",
         "v_v5sideb 29 g",
         "v_m_lwing 10 g",
-        "v_m_lplate 65 g",
-        "v_m_lbear 4 g",
+        "v_m_lplate 63 g",
+        "v_m_lbear 9 g",
         "v_m_lwing_m 10 g",
-        "v_m_lplate_m 65 g",
-        "v_m_lbear_m 4 g",
+        "v_m_lplate_m 63 g",
+        "v_m_lbear_m 9 g",
         "v_m_pawl_pivot 6 g",
         "v_m_pawl_pivot_nut 1 g",
         "v_m_pawl 4 g"
@@ -1422,20 +1423,20 @@
          400.0
         ]
        ],
-       "mass": 0.19211620130433044,
-       "r": 0.058030270360080356,
-       "psi_deg": 37.77941253400469,
-       "I": 0.0013505801467550227,
+       "mass": 0.19552126018047924,
+       "r": 0.05577448788295119,
+       "psi_deg": 38.13962649249593,
+       "I": 0.0013306583955061551,
        "parts": [
         "v_v5top 53 g",
         "v_m_twing 8 g",
-        "v_m_tplate 45 g",
-        "v_m_tbear 4 g",
+        "v_m_tplate 41 g",
+        "v_m_tbear 9 g",
         "v_m_pin 11 g",
         "v_m_pin_nut 2 g",
         "v_m_twing_m 8 g",
-        "v_m_tplate_m 43 g",
-        "v_m_tbear_m 4 g",
+        "v_m_tplate_m 40 g",
+        "v_m_tbear_m 9 g",
         "v_m_pin_m 11 g",
         "v_m_pin_nut_m 2 g"
        ]
@@ -1456,16 +1457,16 @@
          218.0
         ]
        ],
-       "mass": 0.1668069140639604,
-       "r": 0.0921404083540533,
-       "psi_deg": 35.849969005934376,
-       "I": 0.0019543604219268975,
+       "mass": 0.17356162054487412,
+       "r": 0.08855446990809997,
+       "psi_deg": 35.84996884418811,
+       "I": 0.0019551532380769386,
        "parts": [
         "v_v5ncen 42 g",
-        "v_m_nplate 38 g",
-        "v_m_nbear 4 g",
-        "v_m_nplate_m 38 g",
-        "v_m_nbear_m 4 g",
+        "v_m_nplate 36 g",
+        "v_m_nbear 9 g",
+        "v_m_nplate_m 36 g",
+        "v_m_nbear_m 9 g",
         "v_m_nstrap 40 g"
        ]
       }
@@ -1916,6 +1917,414 @@
     "pivot_wall_mm": 4.0,
     "reinforced": "ring on 3 steel standoffs, its end fitted to the hook (sand / tape at assembly); pin and pivot = 6 mm shoulder screws clamped by nuts; lower hub r 34; rest stops = solid cheeks of the NECTAR support piece",
     "why": "the pin blocks the pawl while POLLEN shoots, turns it out to switch, and the ring keeps it out while carried"
+   },
+   "frame": {
+    "plates": {
+     "inner_u": 76.575,
+     "t": 6.35,
+     "outline_area_mm2": 19497,
+     "bounds_yz": [
+      -94.4,
+      -147.9,
+      30.0,
+      45.6
+     ]
+    },
+    "motor": {
+     "centre_yz": [
+      -69.36,
+      -34.58
+     ],
+     "htd": "24T:24T, 274.9 mm pitch loop drawn (stock 275)"
+    },
+    "squishy_belt": {
+     "kind": "HTD 3M, 9 wide",
+     "driver": 25,
+     "driven": 95,
+     "loop": 444.0,
+     "needed_mm": 443.91,
+     "ratio": 3.8,
+     "lowest_z": -148.09,
+     "above_gear_top_mm": 1.76
+    },
+    "axle": {
+     "shaft_mm": 222.5,
+     "spacers_mm": [
+      5.0,
+      8.0,
+      8.25,
+      19.67,
+      27.67
+     ],
+     "ends_u": [
+      -109.0,
+      113.5
+     ]
+    },
+    "squishy": {
+     "shaft_mm": 207.7,
+     "fixed": true
+    },
+    "ears": {
+     "y": [
+      -62.0,
+      30.0
+     ],
+     "top_z": -123.85238319482733,
+     "screws_yz": [
+      [
+       -35.0,
+       -136.85238319482733
+      ],
+      [
+       12.0,
+       -136.85238319482733
+      ]
+     ]
+    },
+    "swivel_y": -21.0,
+    "gear_top_z": -149.85238319482733,
+    "materials": {
+     "m_servo": "vendor:2000-0025-0003",
+     "m_servo_standoffs": "alu",
+     "m_servo_screws": "steel",
+     "m_motor": "vendor:5203-2402-0001",
+     "m_motor_screws": "steel",
+     "m_fly_shaft": "steel",
+     "m_fly_bearings_plates": "brg:F6801:2",
+     "m_fly_spacers": "steel",
+     "m_fly_collars": "alu",
+     "m_fly_hub": "vendor:1310-0016-4012",
+     "m_steel_discs": "vendor:3628-0032-0082:6",
+     "m_fly_screws": "steel:16",
+     "m_htd_pulley_fly": "vendor:3411-0014-0024",
+     "m_htd_pulley_motor": "vendor:3417-4008-0024",
+     "m_htd_hub": "vendor:1301-0016-4012",
+     "m_htd_belt": "belt:htd275",
+     "m_sq_shaft": "steel",
+     "m_sq_bearings": "vendor:1611-0514-4008:2",
+     "m_sq_collars": "alu:4",
+     "m_sq_driver": "alu",
+     "m_sq_driven": "print",
+     "m_sq_belt": "belt:htd3m_444",
+     "m_plate_p": "acetal",
+     "m_plate_m": "acetal",
+     "m_plate_ear_screws": "steel:4"
+    },
+    "vendor": [
+     {
+      "sku": "2000-0025-0003",
+      "part": "servo",
+      "R": [
+       [
+        0.0,
+        -0.0,
+        -1.0
+       ],
+       [
+        0.6427876096865394,
+        -0.766044443118978,
+        0.0
+       ],
+       [
+        -0.766044443118978,
+        -0.6427876096865394,
+        0.0
+       ]
+      ],
+      "t": [
+       66.15,
+       -33.78945716688095,
+       -41.406793939733106
+      ]
+     },
+     {
+      "sku": "5203-2402-0001",
+      "part": "motor",
+      "R": [
+       [
+        0.0,
+        -1.0,
+        0.0
+       ],
+       [
+        1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       16.284999999999997,
+       -32.20741302415694,
+       -23.5303305160102
+      ]
+     },
+     {
+      "sku": "1310-0016-4012",
+      "part": "fly_hub",
+      "R": [
+       [
+        0.0,
+        0.0,
+        1.0
+       ],
+       [
+        1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        1.0,
+        0.0
+       ]
+      ],
+      "t": [
+       -6.4,
+       -7.77,
+       -18.1
+      ]
+     },
+     {
+      "sku": "3628-0032-0082",
+      "part": "steel_discs",
+      "R": [
+       [
+        0.0,
+        1.0,
+        0.0
+       ],
+       [
+        -1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       18.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "sku": "3628-0032-0082",
+      "part": "steel_discs",
+      "R": [
+       [
+        0.0,
+        1.0,
+        0.0
+       ],
+       [
+        -1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       24.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "sku": "3628-0032-0082",
+      "part": "steel_discs",
+      "R": [
+       [
+        0.0,
+        1.0,
+        0.0
+       ],
+       [
+        -1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       30.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "sku": "3628-0032-0082",
+      "part": "steel_discs",
+      "R": [
+       [
+        0.0,
+        -1.0,
+        0.0
+       ],
+       [
+        1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       -18.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "sku": "3628-0032-0082",
+      "part": "steel_discs",
+      "R": [
+       [
+        0.0,
+        -1.0,
+        0.0
+       ],
+       [
+        1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       -24.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "sku": "3628-0032-0082",
+      "part": "steel_discs",
+      "R": [
+       [
+        0.0,
+        -1.0,
+        0.0
+       ],
+       [
+        1.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        0.0,
+        1.0
+       ]
+      ],
+      "t": [
+       -30.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "sku": "3411-0014-0024",
+      "part": "htd_pulley_fly",
+      "R": [
+       [
+        -1,
+        0,
+        0
+       ],
+       [
+        0,
+        -1,
+        0
+       ],
+       [
+        0,
+        0,
+        1
+       ]
+      ],
+      "t": [
+       -87.95,
+       19.715,
+       -33.04
+      ]
+     },
+     {
+      "sku": "3417-4008-0024",
+      "part": "htd_pulley_motor",
+      "R": [
+       [
+        0,
+        0,
+        -1
+       ],
+       [
+        1,
+        0,
+        0
+       ],
+       [
+        0,
+        -1,
+        0
+       ]
+      ],
+      "t": [
+       -86.0,
+       -69.35741302415694,
+       -34.5803305160102
+      ]
+     },
+     {
+      "sku": "1301-0016-4012",
+      "part": "htd_hub",
+      "R": [
+       [
+        0,
+        -1,
+        0
+       ],
+       [
+        1,
+        0,
+        0
+       ],
+       [
+        0,
+        0,
+        1
+       ]
+      ],
+      "t": [
+       -95.58,
+       -3.06,
+       4.12
+      ]
+     }
+    ]
    }
   },
   "v5_servo": {
@@ -1925,9 +2334,9 @@
    "no_load_deg_s": 667.0,
    "power": "REV Servo Hub / Servo Power Module / goBILDA 6V injector (R502)",
    "moving_mass_g": {
-    "plow": 242,
-    "arm": 192,
-    "ncen": 167
+    "plow": 249,
+    "arm": 196,
+    "ncen": 174
    }
   },
   "v5": {
