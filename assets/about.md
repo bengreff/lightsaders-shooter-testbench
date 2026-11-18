@@ -1,7 +1,7 @@
 # Lightsaders BIOBUZZ turret v5
 
-Our FTC team's turret shooter for the 2026-27 BIOBUZZ season, for both balls, simulated: the parts that touch a ball and the
-mechanisms that move the hood pieces. The side plates, fasteners and mounts come later.
+Our FTC team's turret shooter for the 2026-27 BIOBUZZ season, for both balls, simulated: the parts that touch a ball, the
+mechanisms that move the hood pieces and the frame that holds them (drawn; the robot's goBILDA 3208 gear ring is shown underneath).
 
 ## The design
 - **One motor:** a goBILDA Hogback flywheel (96 mm, steel discs) and, geared off the same motor (1 : 3.8), a squishy feed wheel
@@ -23,9 +23,9 @@ mechanisms that move the hood pieces. The side plates, fasteners and mounts come
   pin runs in. While POLLEN shoots, the track is concentric with the axle, so the pin stops the pawl turning either way and its
   hook stays behind the end of a fixed ring; the balls' push goes through the hook into the ring and the pawl's pivot. To switch,
   the track bends: the pin turns the pawl and draws the hook in under the ring. While carried, the ring keeps the pawl turned, so
-  the lower half is locked to the top half (about 1.5 deg of play) and cannot drop over the top. Built to last: the ring and the
-  lower half's rest stops are acetal on steel standoffs, the ring's end is fitted to the hook (no play), and the pin and the
-  pawl's pivot are steel shoulder screws clamped to their plates.
+  the lower half is locked to the top half (about 1.5 deg of play) and cannot drop over the top. Built to last: the ring is acetal
+  on steel standoffs, the lower half's rest stops are solid cheeks of the NECTAR support, the ring's end is fitted to the hook
+  (no play), and the pin and the pawl's pivot are steel shoulder screws clamped to their plates.
 - **One servo does every change:**
   - 0-31 deg: POLLEN exit angle (about 56-88 deg), only the central top tooth moves;
   - 31-38 deg: the pin turns the latch open; from 38 deg it lifts the lower half; both swing up over the flywheel;
@@ -35,16 +35,28 @@ mechanisms that move the hood pieces. The side plates, fasteners and mounts come
   and eases it down through the landing (about 150 instead of 590 deg/s). **MIXED** fires POLLEN, NECTAR, POLLEN, NECTAR in real
   time: the hood swings as soon as a ball has left it.
 
+- **The frame:**
+  - two 1/4 in acetal side plates, only over the bore, no tie: the two axles clamp them and they screw to the base;
+  - ONE printed base piece: the bore ring, the static NECTAR teeth, the NECTAR support and the side plates' ears, screwed to the
+    gear ring;
+  - the flywheel axle is a goBILDA 12 mm REX shaft, with 12 x 21 mm bearings in every plate;
+  - the motor sits behind the bore, 24T:24T HTD 5M on a stock 275 mm belt; the squishy is fixed, driven 1 : 3.8 by HTD 3M 25T:95T on
+    a stock 444 mm belt (no idler);
+  - the servo is screwed to its plate on 4 standoffs.
+- **Mass as drawn:** about 3.6 kg (prints counted at 1.0 g/cm3), of which the 6 steel flywheel discs are 0.9 kg.
+
 ## Measured in this simulation
 | | |
 |---|---|
 | Calibration grid (both balls, 1600-4400 rpm, every hood setting) | 468 shots, 0 jams |
 | TARGET mode check, 30 random targets per ball | POLLEN 1.0 % speed / 1.3 deg rms error; NECTAR 1.2 % / 0.7 deg |
-| Mechanisms over the whole servo travel | no part touches another; every part at least 1.2 mm from the balls |
+| Mechanisms + frame over the whole servo travel | no part touches another; every part at least 1.2 mm from the balls |
+| Reach from the swivel axis (R105, 228.6 mm) | 173.9 mm at most |
 | MIXED P N P N (6.0 m/s at 65 deg, and 7.5 m/s at 58 deg; 4 bursts) | 1.76-1.85 s from the first ball's exit to the last, 0 jams |
 
 ## What is NOT verified
-- Nothing here has been built. The hood parts, the latch and the pin follow the servo angle in this model; their contacts
+- Nothing here has been built. The frame's goBILDA parts are placed from their own CAD; the bearings' flanges, the 25T pulley and
+  the hub bolt patterns are to check against the bought parts. The hood parts, the latch and the pin follow the servo angle in this model; their contacts
   are checked as solids (no overlaps over the whole servo travel), not simulated as forces.
 - The squishy's stiffness is fitted to one hand measurement; its deepest squash (33 mm here) is a guess.
 - The servo's loop gains and rotor inertia are guesses, and the hood is rigid against the balls here: how far a real servo
