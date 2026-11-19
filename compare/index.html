@@ -43,6 +43,7 @@ turrets. The comparison between them is fair, because all three get the same inp
 <p><b>The passive turret cannot fire a fast mixed burst.</b> Fed back to back, a 4-ball mixed burst takes about half a second but only
 44 % of its balls land, and no ball fired right after a NECTAR lands: each NECTAR takes 15 % off the wheel speed
 and the wheel cannot recover in time. No shot position reaches 90 %. v5's fastest mixed burst takes 1.3 s and lands 81 %.
+A flywheel with twice or four times the inertia, or a hood stop opened to squeeze NECTAR less, does not fix it.
 At the robot's real feed gaps v5 lands 96 % of mixed balls and the passive turret 89-90 %.</p>
 <p>The team turret is lighter (1.27 vs 3.32 kg) and on the robot today. v5 can be built from tomorrow (build pack linked).</p></div>
 
@@ -108,7 +109,14 @@ every ball fed sooner leaves too slow. One ball type at a time shows the split: 
 <p>Two design levers set this: a heavier flywheel (less speed lost per ball) and a hood stop that squeezes NECTAR less. Today a NECTAR pushes the hood
 onto its 16.8 mm stop and is squeezed 3.5 mm, against 2.7 mm in v5. Each variant was recalibrated, then given the same
 back-to-back bursts in all 103 positions.</p>
-<div class="wrap"><p class="pend">The design-lever runs (heavier flywheel, opened hood stop) are still running on backhouse.</p></div>
+<div class="wrap"><table class="num"><thead><tr><th>Passive turret, our loop</th><th>0.08 s gaps: landing</th><th>0.16 s gaps: landing</th><th>Ball right after a NECTAR (0.16 s)</th><th>2nd ball speed off (0.16 s)</th><th>Positions where 90 % land (0.16 s)</th></tr></thead><tbody>
+<tr><td>As built: 4 steel discs, hood stop 16.8 mm</td><td>43 % (0.29 s)</td><td>44 % (0.49 s)</td><td>0 %</td><td>-6.9 %</td><td>0 of 103</td></tr>
+<tr><td>Flywheel inertia x2 (about 8-9 discs, +0.7 kg, derived)</td><td>52 % (0.28 s)</td><td>57 % (0.49 s)</td><td>29 %</td><td>-2.2 %</td><td>0 of 103</td></tr>
+<tr><td>Flywheel inertia x4 (about 18 discs: a bound, not buildable)</td><td>50 % (0.27 s)</td><td>49 % (0.48 s)</td><td>46 %</td><td>+0.2 %</td><td>2 of 103</td></tr>
+<tr><td>Hood stop opened to the full 19.3 mm slide</td><td>42 % (0.29 s)</td><td>45 % (0.49 s)</td><td>1 %</td><td>-5.6 %</td><td>0 of 103</td></tr>
+<tr><td>Inertia x2 + stop opened</td><td>55 % (0.28 s)</td><td>60 % (0.49 s)</td><td>32 %</td><td>-2.1 %</td><td>0 of 103</td></tr>
+</tbody></table>
+<p><b>None of them gets there.</b> A heavier flywheel helps the ball right after a NECTAR (from 0 % to 29 % at x2, 46 % at x4) but no version lands 90 % in more than 2 of the 103 positions. Opening the hood stop changes almost nothing, so the NECTAR's cost to the wheel is not mainly its squeeze on the stop. With the heavier wheels the first ball also lands less often (81 % at x2, 49 % at x4) and leaves +1.4 / +2.6 % fast, likely because our loop is tuned for the 4-disc wheel (not checked). Counting every first ball as landed still gives only 62 % (x2) and 62 % (x4).</p><p class="small">Not tested: a second flywheel motor. At 0.16 s gaps the wheel would have to win back a NECTAR's 15 % in 0.16 s, about 3.6 x faster than the 0.57 s it takes today (derived from the measured recovery).</p></div>
 
 <h2>Details</h2>
 <details><summary>How the comparison is fair</summary><div class="det"><ul>
@@ -227,7 +235,7 @@ v5 bolts into 6 of the 8 gear holes the team's deck uses, and a printed sleeve b
 <li>The team turret's trough is opened to 1.1 x the ball radius in the sim (the CAD is 0.27 mm tighter than the ball and the rigid sim ball jams).</li>
 <li>The hood servo's travel per unit is guessed (270 deg). The flywheel's fitted inertia is 3.5 x what the team turret's CAD parts give; not explained.</li>
 <li>The passive turret is contact geometry only: its sprung mass (0.25 kg) is a guess, its slide has no friction in the sim, and why its NECTAR costs the wheel so much more than v5's is only partly traced (a bigger squeeze on its stop).</li>
-<li>The heavier-flywheel variants scale the wheel's inertia only; the motor, belt and loop gains are unchanged, and the disc count is derived from the 2 vs 4 disc inertias.</li>
+<li>The heavier-flywheel variants scale the wheel's inertia only; the motor, belt and loop gains are unchanged (their first ball leaves 1-3 % fast, likely the loop), and the disc count is derived from the 2 vs 4 disc inertias. They ran on our loop only.</li>
 <li>Side stiffness is a beam model with guessed printed-PETG stiffness. 2 discs vs 4 is sim only, on the 11-09 motor fit.</li>
 </ul>
 <details><summary>Sources</summary><div class="det"><ul class="small">
