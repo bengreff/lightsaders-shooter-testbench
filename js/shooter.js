@@ -165,6 +165,57 @@ export class V5Chain {
   }
 }
 
+/** The passive turret's abstract spring (2026-11-18, controller.passive_hood.law): the force pushing the sprung hood back onto its
+ *  POLLEN seat along its slide, as a law of the hood's travel x (m, + = away from the seat), applied every step on the slide's dof
+ *  (MuJoCo's own joint spring / damping / friction are zeroed when a law is present; the seat and the outer stop stay the joint's
+ *  limits). Options (law.options[name], the page's spring selector):
+ *    linear     F = f0 + k x                                    (preload f0_n at the seat, rate k_n_per_mm)
+ *    constant   F = f0                                          (a near-constant-force spring: k ~ 0)
+ *    two_stage  F = f0 -> f1 linearly over the first x1, then f1 + k2 (x - x1)   (f1 < f0: a FALLING rate, a detent-like hold that lets go)
+ *  plus, for every option: damping_ns_per_m (viscous, on the slide), friction_n (dry, MuJoCo frictionloss), stop_mm (the outer hard
+ *  stop, <= the scene's slide range), mass_kg (the sprung moving mass). */
+export class PassiveSpring {
+  static force(L, x) {
+    const mm = 1000 * Math.max(0, x);
+    if (L.type === 'two_stage') {
+      const x1 = Math.max(1e-6, L.x1_mm);
+      return mm < x1 ? L.f0_n + (L.f1_n - L.f0_n) * mm / x1 : L.f1_n + (L.k2_n_per_mm ?? 0) * (mm - x1);
+    }
+    return L.f0_n + (L.type === 'constant' ? 0 : (L.k_n_per_mm ?? 0) * mm);
+  }
+  constructor(spec, init) {
+    this.spec = spec; this.F = 0;
+    if (init && typeof init === 'object') { this.name = init.name ?? 'custom'; this.L = { ...init }; }
+    else { this.name = init && spec.law.options[init] ? init : spec.law.default; this.L = { ...spec.law.options[this.name] }; }
+  }
+  onLoad(sim) {
+    const m = sim.m, j = sim.jointId(this.spec.joint);
+    this.j = j; this.q = sim.qadr(this.spec.joint); this.v = sim.vadr(this.spec.joint);
+    this.body = m.jnt_bodyid[j];
+    this.range0 = m.jnt_range[2 * j + 1];          // the scene's slide range (the drawn NECTAR stop)
+    this.mass_tips = this.spec.mass_extra_kg ?? 0.01;   // bodies riding on the slide (v4: the tips, 0.01 kg)
+    m.jnt_stiffness[j] = 0; m.qpos_spring[this.q] = 0; m.dof_damping[this.v] = 0;
+    this.apply(sim);
+  }
+  /** pick an option by name (or pass a law object) and write its mass / stop / friction into the model */
+  set(sim, nameOrLaw) {
+    if (typeof nameOrLaw === 'string') { this.name = nameOrLaw; this.L = { ...this.spec.law.options[nameOrLaw] }; }
+    else { this.name = nameOrLaw.name ?? 'custom'; this.L = { ...nameOrLaw }; }
+    this.apply(sim);
+  }
+  apply(sim) {
+    const m = sim.m, L = this.L;
+    if (L.mass_kg !== undefined) m.body_mass[this.body] = Math.max(1e-3, L.mass_kg - this.mass_tips);
+    m.jnt_range[2 * this.j + 1] = L.stop_mm !== undefined ? Math.min(this.range0, L.stop_mm / 1000) : this.range0;
+    m.dof_frictionloss[this.v] = L.friction_n ?? 0;
+  }
+  preStep(sim) {
+    const x = sim.qpos[this.q], v = sim.qvel[this.v];
+    this.F = PassiveSpring.force(this.L, x);
+    sim.qfrc[this.v] = -this.F - (this.L.damping_ns_per_m ?? 0) * v;
+  }
+}
+
 /** The robot's lift servo (bench.py lift_step): continuous rotation on the 6 V rail through its belt speed-up onto the
  *  lift wheel; the same straight torque-speed line as the motor, BRAKE when off. */
 export class LiftServo {
@@ -323,7 +374,7 @@ export class Shooter {
   /** manifest: a variant's manifest.json. opts: {seed, jitter (true: the Python bench's arrival jitter),
    *  ballSpread (null | BALL_SPREAD keys to vary per shot: bench.py set_ball_spread)}. */
   constructor(sim, manifest, opts = {}) {
-    this.sim = sim; this.M = manifest; this.D = manifest.design;
+    this.sim = sim; this.M = manifest;
     this.jitter = opts.jitter ?? false;
     // arrival jitter: mulberry32 (not numpy's stream), except on the v2 feed, whose cell_start draws are numpy's
     // default_rng(seed).uniform, draw for draw (V10Bench.rng), so a seeded jittered run matches the Python bench shot for shot
@@ -333,20 +384,32 @@ export class Shooter {
     this.ballSpread = null; this.lastBallDraw = null; this._ballNominal = null;
     this.setBallSpread(opts.ballSpread);
     const C = manifest.controller;
-    this.hub = new Hub(C.hub, C.wheels, !C.motor);
+    // controller.loops (2026-11-18): the flywheel loops this turret can run, {name: {label, wheel: {law, gains...}, gate_tol, calibration}};
+    // opts.loop (else loop_default) picks one. The design is copied so a loop's gate_tol never leaks into the shared manifest.
+    this.D = { ...manifest.design };
+    this.loop = C.loops ? (opts.loop && C.loops[opts.loop] ? opts.loop : C.loop_default) : null;
+    const wheels = this.loop ? C.wheels.map((w) => ({ ...w, ...C.loops[this.loop].wheel })) : C.wheels;
+    if (this.loop && C.loops[this.loop].gate_tol !== undefined) this.D.gate_tol = C.loops[this.loop].gate_tol;
+    // controller.push_entry (2026-11-18, the fair comparison): the team POLLEN turret's randomized pushed entry on another turret; opts.entry
+    // ('push' | 'own'), else entry_default, else the turret's own feed
+    this.entry = C.push_entry ? ((opts.entry ?? C.entry_default) === 'push' ? 'push' : 'own') : null;
+    this.hub = new Hub(C.hub, wheels, !C.motor);
     this.motor = C.motor ? new Motor(C.motor, this.hub) : null;
+    this.hub.motor = this.motor;                    // (law "pro" reads the battery voltage, as the robot reads the hub's)
     this.feeder = C.feeder ? new Feeder({ ...C.feeder, battery_v: C.motor?.battery_v ?? 12 }, this.motor) : null;
     this.servos = new Servos(C.servos);
     this.lift = C.lift ? new LiftServo(C.lift) : C.v10 ? new V10Lift(C.v10, this) : null;
     this.mech = C.hood_mech ? new HoodMech(C.hood_mech) : null;   // the hood on its real mechanism (turret v3), else a servo-set slide
     this.passive = C.passive_hood || null;   // turret v4p: the slide is free, sprung onto the POLLEN seat; nothing commands it
     this.chain = C.v5_chain ? new V5Chain(C.v5_chain) : null;   // turret v5: one servo, the followers on lost motion
+    this.spring = this.passive && this.passive.law ? new PassiveSpring(this.passive, opts.spring) : null;   // the passive turret's abstract spring (opts.spring: an option name or a law)
+    this.push = (C.bore && C.bore.push) || C.push_entry ? new BorePush(this) : null;   // the randomized, pushed entry (team POLLEN turret; others: push_entry)
     this.leadS = {};                                  // feed -> flywheel time per ball type (ShotTracker.finish)
     this.air = new Air(manifest.air, manifest.balls);
     this.trackers = new Set();
     this.onShot = null;                  // callback(result) when a tracker finishes
     this.tracker = { postStep: () => this._track() };
-    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.chain, this.mech, this.air, this.tracker].filter(Boolean);
+    this.hooks = [this.hub, this.motor, this.feeder, this.lift, this.servos, this.chain, this.spring, this.mech, this.air, this.push, this.tracker].filter(Boolean);
     for (const h of this.hooks) sim.addHook(h);
     this._init();
   }
@@ -376,7 +439,7 @@ export class Shooter {
     } else if (this.passive) {                       // v4p: the hood resting on its POLLEN seat
       this.j_gap = sim.qadr('gap'); this.v_gap = sim.vadr('gap');
       sim.qpos[this.j_gap] = this.passive.seat_m; sim.qvel[this.v_gap] = 0;
-    } else {
+    } else if (S.gap) {                              // a hood on a gap slide (no slide: the team POLLEN turret's hood only turns)
       this.j_gap = sim.qadr('gap');
       S.gap.tgt = S.gap.cmd = DS.offset(this.D, 'pollen'); S.gap.held = undefined;
       sim.qpos[this.j_gap] = S.gap.cmd;
@@ -475,6 +538,14 @@ export class Shooter {
 
   // ------------------------------------------------------------------ commands (bench.py)
   setRpm(rpm) { this.hub.setRpm(rpm); }
+  /** Switch the flywheel loop (controller.loops[name]) in place: the hub's law and gains, and the ready band it comes with. */
+  setLoop(name) {
+    const L = this.M.controller.loops && this.M.controller.loops[name];
+    if (!L) return false;
+    this.hub.setLaw(L.wheel); this.loop = name;
+    this.D.gate_tol = L.gate_tol ?? this.M.design.gate_tol;
+    return true;
+  }
   /** Mixed bursts: may the next ball (type bt) be fed now? The wheel is ready and the hood (modelled servo) will be at rest
    *  before the ball reaches it (the feed's lead time, measured on the last ball of that type, less `margin` s); without a
    *  measured lead, or a modelled servo, only when everything has settled (as FIRE). */
@@ -493,17 +564,19 @@ export class Shooter {
     this.ball_type = bt;
     if (this.chain) { this.setAngle(this._arm ?? 0); return; }   // v5: the one servo swings to the ball's zone (same slider setting)
     if (this.mech) this.mech.setEnd(bt);           // the hood servo commanded to that ball's end (its preload)
-    else if (!this.passive) this.servos.set('gap', DS.offset(this.D, bt, squeeze_mm));   // v4p: the ball moves the hood itself
+    else if (!this.passive && this.servos.S.gap) this.servos.set('gap', DS.offset(this.D, bt, squeeze_mm));   // v4p: the ball moves the hood itself
   }
+  /** the passive turret: pick a spring option by name (manifest passive_hood.law.options) or pass a law object */
+  setSpring(nameOrLaw) { if (this.spring) this.spring.set(this.sim, nameOrLaw); }
   armDeg() { return deg(this.sim.qpos[this.j_arm]) - (this.chain ? this.chain.theta0[this.ball_type] : 0); }   // v5: relative to the zone's middle
   armTargetDeg() { return deg(this.servos.S.angle.tgt) - (this.chain ? this.chain.theta0[this.ball_type] : 0); }
   /** v5: the one servo's angle (deg of hood rotation about the axle). */
   servoDeg() { return deg(this.sim.qpos[this.j_arm]); }
   /** m: the hood along its travel (the slide's coordinate; on the mechanism, the hood's real displacement along the straight
    *  POLLEN -> NECTAR line, which its hook path leaves in mid travel). */
-  gapM() { return this.mech ? this.mech.disp(this.sim) : this.chain ? 0 : this.sim.qpos[this.j_gap]; }
+  gapM() { return this.mech ? this.mech.disp(this.sim) : this.chain || this.j_gap === undefined ? 0 : this.sim.qpos[this.j_gap]; }
   gapMm() { return 1000 * this.gapM(); }
-  gapTargetMm() { return this.chain ? 0 : this.mech ? 1000 * this.mech.H.travel[this.mech.end] : this.passive ? 1000 * this.passive.seat_m : 1000 * this.servos.S.gap.tgt; }
+  gapTargetMm() { return this.chain ? 0 : this.mech ? 1000 * this.mech.H.travel[this.mech.end] : this.passive ? 1000 * this.passive.seat_m : this.servos.S.gap ? 1000 * this.servos.S.gap.tgt : 0; }
   wheelRpm() { return this.hub.wheelRpm(this.sim); }
   get current() { return this.motor ? this.motor.current : 0; }
   get v_batt() { return this.motor ? this.motor.v_batt : 0; }
@@ -520,7 +593,7 @@ export class Shooter {
       && (this.mech ? this.mech.dist(s, this.mech.end) < (this.D.settle_gap_mm ?? 0.3) / 1000 && this.mech.speed(s) < this.mech.H.settle_mps
         : this.chain ? true
         : this.passive ? Math.abs(s.qpos[this.j_gap] - this.passive.seat_m) < (this.D.settle_gap_mm ?? 0.3) / 1000 && Math.abs(s.qvel[this.v_gap]) < this.passive.settle_mps
-        : Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < (this.D.settle_gap_mm ?? 0.3) / 1000);
+        : S.gap ? Math.abs(s.qpos[this.j_gap] - S.gap.tgt) < (this.D.settle_gap_mm ?? 0.3) / 1000 : true);
   }
 
   waitReady(limit_s = 3.0, tol) {
@@ -633,7 +706,9 @@ export class Shooter {
     const C = this.M.controller;
     if (C.feeder) return this.stage(ball);
     if (C.v10) return this.v10CellStart(ball);
+    if (this.entry === 'push') return this.pushStart(ball);
     if (C.inject === 'squish') return this.squishStart(ball);
+    if (C.inject === 'bore') return this.boreStart(ball);
     if (C.cell) return this.cellStart(ball);
     const h = this.D.height_m;
     const { pos, vdir } = C.inject === 'feed_column' ? DS.feedStart(this.D, ball.type)
@@ -761,6 +836,68 @@ export class Shooter {
     return this.overlap(ball);
   }
 
+  /** The team POLLEN turret's feed (export_team_pollen.py): the ball in the bore on the swivel axis, pushed up by the transfer's
+   *  pad (a force-limited velocity actuator, up to its stop), ball and pad both already moving at the set speed. Jitter: across
+   *  (anywhere its centre passes the bore's top), along, height, speed, a little spin. */
+  boreStart(ball) {
+    const Q = this.M.controller.bore, s = this.sim, jit = this.jitter, J = Q.jitter;
+    const U = (lo, hi) => (jit ? this.rand.uniform(lo, hi) : 0.5 * (lo + hi));
+    const r = s.m.geom_size[3 * ball.geom];
+    const live = this._liveBalls();
+    this.balls.forEach((bb, k) => {                 // a ball still in the turret (a stalled shot) is parked
+      if (bb === ball || live.has(bb)) return;
+      const X = s.xpos, q = 3 * bb.body;
+      if (Math.hypot(X[q] - Q.axis[0], X[q + 1] - Q.axis[1], X[q + 2] - Q.axis[2]) < 0.35) this.park(bb, k);
+    });
+    if (Q.push) {                                   // FEED_ENTRY 1: a random point of the bore's cross-section (uniform over the disc the ball's
+      const qa = s.qadr(Q.joint), va = s.vadr(Q.joint);   // centre can reach, up to touching the wall), a random speed and a small random tilt
+      s.qpos[qa] = -0.15; s.qvel[va] = 0; s.ctrlv[s.actuatorId(Q.actuator)] = 0;   // the old pad parked out of the way
+      return this._pushed(ball, Q.push, [0, Q.axis[1]], J.spin);
+    }
+    const v = Q.speed * (jit ? U(1 - J.speed, 1 + J.speed) : 1);
+    let c = [U(-J.dx, J.dx), Q.axis[1] + U(-J.dy, J.dy), Q.z0 + U(-J.dz, J.dz)];
+    if (J.off > 0) {                                // feed-entry condition: off-centre by `off` in a random direction (brushes the bore's side)
+      const th = jit ? this.rand.uniform(0, 2 * Math.PI) : 0;
+      c = [J.off * Math.sin(th), Q.axis[1] + J.off * Math.cos(th), c[2]];
+    }
+    const w = [U(-J.spin, J.spin), U(-J.spin, J.spin), U(-J.spin, J.spin)];
+    this.place(ball, c, [0, 0, v], w);
+    const qa = s.qadr(Q.joint), va = s.vadr(Q.joint);
+    s.qpos[qa] = Math.min(0, c[2] - r - Q.pad_rest_z); s.qvel[va] = v;   // the pad's top under the ball
+    s.ctrlv[s.actuatorId(Q.actuator)] = v;
+    return this.overlap(ball);
+  }
+
+  /** The randomized pushed entry (Ben 2026-11-18), shared by the team POLLEN turret (boreStart) and any turret given controller.push_entry
+   *  (the fair comparison): centre uniform over the disc of radius P.r_max (m) about the bore axis (ax, ay) at height P.z0, a random azimuth;
+   *  speed U(v_lo, v_hi); tilt U(0, tilt_max) from vertical in a random azimuth; spin U(-spin, spin) per axis; then pushed (BorePush) until
+   *  it first touches the turret's own mechanism. The same 8 draws in the same order on every turret, so a seed gives the same entries. */
+  _pushed(ball, P, axy, spin) {
+    const jit = this.jitter, U = (lo, hi) => (jit ? this.rand.uniform(lo, hi) : 0.5 * (lo + hi));
+    // P.r_max_ball[type] (the passive benchmark, 2026-11-18): a ball's own disc where the bore leaves it less play (NECTAR in a v4 / v5 ring);
+    // the same draws, scaled, so a seed still gives the same entries on every turret
+    const rmax = (P.r_max_ball && P.r_max_ball[ball.type] !== undefined) ? P.r_max_ball[ball.type] : P.r_max;
+    const rr = rmax * Math.sqrt(jit ? this.rand.uniform(0, 1) : 0), th = jit ? this.rand.uniform(0, 2 * Math.PI) : 0;
+    const sp = U(P.v_lo, P.v_hi), tl = jit ? this.rand.uniform(0, P.tilt_max) : 0, ta = jit ? this.rand.uniform(0, 2 * Math.PI) : 0;
+    const w = [U(-spin, spin), U(-spin, spin), U(-spin, spin)];
+    const c = [axy[0] + rr * Math.sin(th), axy[1] + rr * Math.cos(th), P.z0];
+    const v = [sp * Math.sin(tl) * Math.sin(ta), sp * Math.sin(tl) * Math.cos(ta), sp * Math.cos(tl)];
+    this.place(ball, c, v, w); this.push.start(ball, v, P);
+    this.lastEntry = { r_mm: 1000 * rr, az_deg: th * 180 / Math.PI, speed: sp, tilt_deg: tl * 180 / Math.PI, tilt_az_deg: ta * 180 / Math.PI };
+    return this.overlap(ball);
+  }
+
+  /** controller.push_entry on a turret with its own feed (v5: the squishy wheel): the team turret's entry at this turret's bore. */
+  pushStart(ball) {
+    const P = this.M.controller.push_entry, s = this.sim, live = this._liveBalls();
+    this.balls.forEach((bb, k) => {                 // a ball still in the turret (a stalled shot) is parked
+      if (bb === ball || live.has(bb)) return;
+      const X = s.xpos, q = 3 * bb.body;
+      if (Math.hypot(X[q] - P.axis[0], X[q + 1] - P.axis[1], X[q + 2] - P.z0 - 0.06) < 0.35) this.park(bb, k);
+    });
+    return this._pushed(ball, P, P.axis, P.spin ?? 3.0);
+  }
+
   /** The entry stage (bench.py stage()): the ball at rest between the rollers, which open to its size; feeder on. */
   stage(ball) {
     const F = this.M.controller.feeder, st = F.stage[ball.type], h = this.D.height_m, s = this.sim;
@@ -813,11 +950,56 @@ export class Shooter {
   }
 }
 
+/** The team POLLEN turret's entry (export_team_pollen.py FEED_ENTRY 1, Ben 2026-11-18): the ball released in the bore at its drawn
+ *  velocity and PUSHED until it first touches the flywheel: a force on it = its weight + m (v_cmd - v) / tau, capped at max_n, so it keeps
+ *  the drawn velocity also where it brushes the bore wall. A hook after the air law (which sets the balls' forces each step; this adds). */
+export class BorePush {
+  // one push per ball, several at once (a robot-code burst can have the next ball in the bore before the last has left);
+  // the push ends at the ball's first contact with P.until_prefix geoms (v5: its squishy wheel), else the flywheel's tread
+  constructor(B) { this.B = B; this.L = []; this.untilG = new Map(); }
+  get ball() { return this.L.length ? this.L[this.L.length - 1].ball : null; }
+  _until(P) {
+    const key = (P.until_prefix || []).join(',');
+    if (!key) return this.B.wheelG;
+    if (!this.untilG.has(key)) {
+      const s = this.B.sim, g = new Set();
+      s.names.geom.list.forEach((n, i) => { if (n && P.until_prefix.some((p) => n.startsWith(p))) g.add(i); });
+      this.untilG.set(key, g);
+    }
+    return this.untilG.get(key);
+  }
+  start(ball, v, P) {
+    P = P || this.B.M.controller.bore.push;
+    this.L = this.L.filter((e) => e.ball !== ball);
+    this.L.push({ ball, v, P, G: this._until(P), t0: this.B.sim.time, prev: null });
+  }
+  preStep(sim) {
+    if (!this.L.length) return;
+    const B = this.B, X = sim.xfrc, keep = [];
+    for (const e of this.L) {
+      const b = e.ball, P = e.P, o = 6 * b.body;
+      if (e.prev && !(B.air && B.air.enabled)) for (let k = 0; k < 3; k++) X[o + k] -= e.prev[k];   // no air law: undo last step's push
+      e.prev = null;
+      let hit = false;
+      sim.forEachContact((i, g1, g2) => { if ((g1 === b.geom && e.G.has(g2)) || (g2 === b.geom && e.G.has(g1))) hit = true; });
+      if (hit || sim.time - e.t0 > P.max_s) continue;   // the turret's own mechanism has it: the push ends
+      const m = sim.m.body_mass[b.body], q = sim.qvel, a = b.vadr;
+      let F = [m * (e.v[0] - q[a]) / P.tau, m * (e.v[1] - q[a + 1]) / P.tau, m * (e.v[2] - q[a + 2]) / P.tau + m * 9.81];
+      const n = Math.hypot(F[0], F[1], F[2]);
+      if (n > P.max_n) F = F.map((f) => f * P.max_n / n);
+      for (let k = 0; k < 3; k++) X[o + k] += F[k];
+      e.prev = F; keep.push(e);
+    }
+    this.L = keep;
+  }
+}
+
 export class ShotTracker {
   constructor(B, bt, target) {
     this.B = B; this.bt = bt; this.target = target;
     this.ball = B.freeBall(bt);
     this.deep = B.inject(this.ball);
+    if (B.hub.fed) B.hub.fed(B.sim.time);              // the robot knows when it feeds: its flywheel loop goes to its fast gains
     this.draw = B.ballSpread ? B.lastBallDraw : null;     // this ball's variation draw (fractions), if varied
     const s = B.sim;
     this.t0 = s.time; this.last = null; this.first = null; this.taken = false; this.peak = 0;
@@ -827,6 +1009,7 @@ export class ShotTracker {
     this.depth = { tread: 0, hood: 0 }; this.force = { tread: 0, hood: 0 };
     this.i_peak = 0; this.v_min = B.v_batt; this.feed_i_peak = 0;
     this.meta = {};                      // caller's notes, copied into the result
+    if (B.lastEntry) { this.meta.entry = B.lastEntry; B.lastEntry = null; }   // the randomized entry (team POLLEN turret)
   }
 
   /** squeeze (deepest overlap) and summed normal force into the TREAD and the HOOD shell this step (bench.py _contacts). */

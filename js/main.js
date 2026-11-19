@@ -14,6 +14,10 @@ const $ = (id) => document.getElementById(id);
 const fmt = (x, d) => (x == null || !isFinite(x) ? '-' : (+x).toFixed(d));
 const sgn = (x, d) => (x == null || !isFinite(x) ? '-' : (x >= 0 ? '+' : '') + (+x).toFixed(d));
 
+const BURST_TITLE = 'Fire the burst size of balls, each as soon as the shooter is ready again';
+const ROBOT_BURST_TITLE = 'ROBOT CODE (BiobuzzTeleopV4, gamepad2 Y held): 4 balls fed by the transfer at power 1 with NO speed check; '
+  + 'the transfer is not modelled, so each ball enters at the measured Meet 1 ball-to-ball intervals (drawn per burst), whatever the wheel is doing';
+
 const VIEWS = [  // name, azimuth, elevation, distance (MuJoCo free camera, as testbench.py), look-at (null: the shooter)
   ['ISO', 135, -20, 0.95, null], ['SIDE', 180, -2, 0.9, null], ['FRONT', 60, -12, 1.0, null], ['TOP', 180, -88, 0.9, null],
   ['FLIGHT', 160, -8, 3.2, [0, 0.9, 1.0]]];
@@ -22,7 +26,7 @@ const app = window.app = {
   mj: null, sim: null, shooter: null, view: null, manifest: null, variant: null, variants: [], base: null,
   map: null, maps: {},               // the calibration in use, and browser recalibrations per variant id
   s: { ball: 'pollen', mode: 'target', speed: 6.0, elev: 72.5, rpm: 2600, arm: 0, sq_pollen: 2.4, sq_nectar: 1.0,
-       feeder_u: 1.0, lift_n: 1.0, burst: 6, slow: 1, auto: false, paused: false, view: 0, jitter: true, vary: true, collision: false },
+       feeder_u: 1.0, lift_n: 1.0, burst: 6, slow: 1, auto: false, paused: false, view: 0, jitter: true, vary: true, collision: false, loop: null },
   queue: 0, queueActive: false, lastFeed: null, tracker: null, recov: null, shots: [], cmd: [0, 2600, true],
   achieved: 0, fps: 60,
   prof: { phys: 0, draw: 0, frames: 0, steps: 0 },   // ms per frame accumulators (app.prof; reset by hand)
@@ -63,7 +67,7 @@ async function boot() {
   $('variant').value = want;
   await loadVariant(want);
   {                                                    // ?ball=nectar&arm=-15.5 (direct mode), ?servo=100 (turret v5: hold the one servo there), ?view=1&zoom=2
-    if (q.get('ball')) app.s.ball = q.get('ball');
+    if (q.get('ball') && app.ballTypes.includes(q.get('ball'))) app.s.ball = q.get('ball');
     if (q.get('arm') !== null) { app.s.mode = 'direct'; app.s.arm = +q.get('arm'); }
     if (q.get('ball') || q.get('arm') !== null) { app._cmdKey = null; apply(); }
     if (q.get('servo') !== null && app.shooter.chain) { app.holdServo = +q.get('servo'); app.shooter.servos.set('angle', app.holdServo * Math.PI / 180); }
@@ -96,8 +100,21 @@ async function loadVariant(id) {
   if (app.sampleHook) app.sim.removeHook(app.sampleHook);
   app.sim.loadScene(data.xml, data.files);
   app.manifest = data.manifest; app.variant = v; app.base = data.base;
-  const B = app.shooter = new Shooter(app.sim, data.manifest, { jitter: app.s.jitter, seed: (Math.random() * 2 ** 31) | 0,
+  const LP = data.manifest.controller.loops;           // the flywheel loops this turret offers (team POLLEN turret: robot code / ours)
+  if (!LP || !LP[app.s.loop]) app.s.loop = LP ? data.manifest.controller.loop_default : null;
+  const B = app.shooter = new Shooter(app.sim, data.manifest, { jitter: app.s.jitter, seed: (Math.random() * 2 ** 31) | 0, loop: app.s.loop,
     ballSpread: app.s.vary ? Object.keys(data.manifest.controller.ball_spread || BALL_SPREAD) : null });
+  $('k-loop').hidden = !LP;
+  if (LP) $('loop').innerHTML = Object.entries(LP).map(([k, L]) => `<option value="${k}" title="${L.why || ''}">${L.label || k}</option>`).join('');
+  if (LP) $('loop').value = app.s.loop;
+  const PL = data.manifest.controller.passive_hood?.law;   // the passive turret's spring options (js/shooter.js PassiveSpring)
+  $('k-spring').hidden = !PL; $('springinfo').hidden = !PL;
+  if (PL) {
+    if (!PL.options[app.s.spring]) app.s.spring = PL.default;
+    $('spring').innerHTML = Object.entries(PL.options).map(([k, L]) => `<option value="${k}" title="${springText(L)}">${L.label || k}${L.calibrated ? ' (cal)' : ''}</option>`).join('');
+    $('spring').value = app.s.spring; B.setSpring(app.s.spring); springInfo();
+  } else app.s.spring = null;
+  $('burstN').parentElement.title = data.manifest.controller.robot_burst ? ROBOT_BURST_TITLE : BURST_TITLE;
   B.onShot = onShot;
   app.fireHook = app.sim.addHook({ preStep: fireStep }, true);
   app.sampleHook = app.sim.addHook({ postStep: sampleStep });
@@ -106,9 +123,13 @@ async function loadVariant(id) {
   if (app.s.cad === undefined) app.s.cad = !!data.manifest.view?.cad;      // a variant may open in the CAD style
   setCad(app.s.cad);
   app.calFile = data.calibration;
-  app.map = app.maps[v.id] || (data.calibration ? new CalMap(data.calibration) : null);
+  app.map = app.maps[mapKey()] || (data.calibration && springCalibrated() ? new CalMap(data.calibration) : null);
+  if (LP && LP[app.s.loop].calibration && LP[app.s.loop].calibration !== data.manifest.calibration) await loadLoopCal();
   if (!app.map && app.s.mode === 'target') app.s.mode = 'direct';
   const D = data.manifest.design, lim = D.angle_travel_deg;
+  app.ballTypes = D.balls || ['pollen', 'nectar'];       // the balls this turret shoots (the team POLLEN turret: POLLEN only)
+  if (!app.ballTypes.includes(app.s.ball)) app.s.ball = app.ballTypes[0];
+  document.querySelectorAll('[data-ball]').forEach((b) => { b.disabled = !app.ballTypes.includes(b.dataset.ball); });
   const sa = document.querySelector('.slider[data-key="arm"] input'); sa.min = -lim; sa.max = lim;
   const fixedAngle = !(lim > 1e-9);                       // a fixed-angle design: speed is the only target (no hood actuator)
   for (const k of ['arm', 'elev']) document.querySelector(`.slider[data-key="${k}"]`).style.display = fixedAngle ? 'none' : '';
@@ -116,7 +137,7 @@ async function loadVariant(id) {
   if (!app._sqInit) { app.s.sq_pollen = D.squeeze_pollen_mm; app.s.sq_nectar = D.squeeze_nectar_mm; app.s.feeder_u = data.manifest.controller.feeder?.u ?? 1; app._sqInit = true; }
   document.querySelector('.slider[data-key="feeder_u"]').style.display = data.manifest.controller.feeder ? '' : 'none';
   document.querySelector('.slider[data-key="lift_n"]').style.display = data.manifest.controller.v10?.press_body ? '' : 'none';
-  app.tracker = null; app.queue = 0; app.recov = null; app.strip.clear();
+  app.tracker = null; app.queue = 0; app.recov = null; app.rburst = null; app.strip.clear();
   app._cmdKey = null; apply();
   setView(app.s.view);
   $('vtitle').textContent = (v.group ? v.group + ': ' : '') + v.label;
@@ -129,6 +150,52 @@ async function loadVariant(id) {
   $('loading').classList.add('hide');
 }
 
+/** browser recalibrations are kept per variant AND flywheel loop (each loop holds the wheel at its own speed). */
+function mapKey() { return (app.s.loop ? `${app.variant.id}|${app.s.loop}` : app.variant.id) + (app.s.spring ? `|${app.s.spring}` : ''); }
+
+/** the passive turret: the files' TARGET calibrations hold for the springs marked calibrated (law.options[name].calibrated) */
+function springCalibrated() {
+  const PL = app.manifest?.controller.passive_hood?.law;
+  return !PL || !app.s.spring || !!PL.options[app.s.spring]?.calibrated;
+}
+function springText(L) {
+  const f = (v, d = 1) => (v === undefined ? '-' : (+v).toFixed(d));
+  const law = L.type === 'two_stage' ? `${f(L.f0_n, 0)} N at the seat falling to ${f(L.f1_n, 0)} N at ${f(L.x1_mm)} mm, then +${f(L.k2_n_per_mm, 2)} N/mm`
+    : L.type === 'constant' ? `${f(L.f0_n, 0)} N at every travel (k 0)` : `${f(L.f0_n, 0)} N preload + ${f(L.k_n_per_mm, 2)} N/mm`;
+  return `${law}; damping ${f(L.damping_ns_per_m, 0)} N s/m, stop ${f(L.stop_mm)} mm, sprung mass ${f(L.mass_kg, 2)} kg` + (L.note ? `. ${L.note}` : '');
+}
+function springInfo() {
+  const PL = app.manifest?.controller.passive_hood?.law; if (!PL) return;
+  $('springinfo').textContent = springText(PL.options[app.s.spring]) + (springCalibrated() ? '' : '. TARGET: not calibrated for this spring (DIRECT, or Recalibrate)');
+}
+/** The spring control (passive turret): switch the law in place; TARGET only with that spring's calibration. */
+async function setSpring(name) {
+  app.s.spring = name; app.shooter.setSpring(name); app._cmdKey = null;
+  if (app.maps[mapKey()]) app.map = app.maps[mapKey()];
+  else if (!springCalibrated()) app.map = null;
+  else if (app.s.loop) { app.map = null; await loadLoopCal(); }
+  else app.map = app.calFile ? new CalMap(app.calFile) : null;
+  if (!app.map && app.s.mode === 'target') app.s.mode = 'direct';
+  apply(); calInfo(); syncUi(); springInfo();
+}
+
+/** The calibration of the selected loop (controller.loops[loop].calibration, next to the manifest); none: DIRECT only. */
+async function loadLoopCal() {
+  const L = app.manifest.controller.loops[app.s.loop], key = mapKey();
+  if (app.maps[key]) { app.map = app.maps[key]; return; }
+  if (!springCalibrated()) { app.map = null; if (app.s.mode === 'target') app.s.mode = 'direct'; return; }
+  const cal = L.calibration ? await fetch(new URL(L.calibration, app.base), { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null) : null;
+  app.map = cal ? new CalMap(cal) : null;
+  if (!app.map && app.s.mode === 'target') app.s.mode = 'direct';
+}
+
+/** The flywheel loop control (team POLLEN turret): switch the running loop in place and take that loop's calibration. */
+async function setLoop(name) {
+  if (!app.shooter.setLoop(name)) return;
+  app.s.loop = name; app._cmdKey = null;
+  await loadLoopCal(); apply(); calInfo(); syncUi();
+}
+
 // ------------------------------------------------------------------ the command (testbench.py command/apply)
 /** The map solves at the selected squeeze (calib.js CalMap levels); a squeeze slider outside the calibrated range is
  *  clamped to it, and both squeeze sliders are sized to it. */
@@ -136,6 +203,7 @@ function syncSqueeze() {
   const M = app.map, s = app.s;
   if (!M || !M.setSqueeze) return;
   for (const bt of ['pollen', 'nectar']) {
+    if (!M.f[bt]) continue;                             // a ball this turret does not shoot
     const R = M.sqRange(bt), inp = document.querySelector(`.slider[data-key="sq_${bt}"] input`);
     if (R) {
       if (inp) { inp.min = R[0]; inp.max = R[1]; }
@@ -194,6 +262,20 @@ function fireStep(sim) {
   if (app.recov && B.settled()) {                       // recovery: from the last shot's exit until ready again
     app.recov.shot.recovery_s = sim.time - app.recov.t; app.recov = null; app.logDirty = true;
   }
+  const RB = app.rburst;
+  if (RB) {                                             // ROBOT-CODE burst: Y held never checks the wheel; balls enter at the measured intervals
+    if (app.s.paused) return;
+    if (RB.t0 === null) { if (!B.settled()) return; RB.t0 = sim.time; }   // the driver presses Y with the wheel up to speed
+    if (RB.i >= RB.sched.length) { if (RB.trackers.every((t) => t.done)) robotBurstDone(); return; }
+    if (sim.time - RB.t0 < RB.sched[RB.i] - 1e-9) return;
+    const bt = app.s.ball, [arm, rpm] = app.cmd, now = sim.time;
+    const tgt = app.s.mode === 'target' && app.map ? { speed: app.s.speed, elevation: app.s.elev } : predicted(bt, arm, rpm);
+    const tr = app.tracker = B.shoot(bt, tgt || undefined);
+    tr.meta.interval = RB.i ? now - RB.feeds[RB.i - 1] : null; tr.meta.variant = app.variant.id; tr.meta.mode = app.s.mode; tr.meta.rburst = RB.i;
+    RB.feeds.push(now); RB.i++; RB.trackers.push(tr); app.lastFeed = now;
+    app.view.startTrail(tr.ball.body, now);
+    return;
+  }
   const MX = app.mixed;
   if (MX) {                                             // MIXED burst: POLLEN, NECTAR, ... each as soon as the hood can take it
     if (app.tracker || app.s.paused) return;            // the previous ball is still in the hood: nothing moves yet
@@ -214,11 +296,28 @@ function fireStep(sim) {
   app.view.startTrail(tr.ball.body, now);
 }
 
+/** BURST on a turret with controller.robot_burst (the team POLLEN turret): the robot's own code, 4 balls, no speed check. */
+function startRobotBurst() {
+  const R = app.manifest.controller.robot_burst, IV = R.intervals_s, sched = [0];
+  for (let k = 1; k < R.n; k++) sched.push(sched[k - 1] + IV[Math.floor(Math.random() * IV.length)]);
+  app.queue = 0; app.s.auto = false; app.mixed = null;
+  app.rburst = { sched, t0: null, i: 0, feeds: [], trackers: [] };
+  $('mixedRes').textContent = `robot-code burst x${R.n}: balls enter at ${sched.map((t) => fmt(t, 2)).join(' / ')} s (measured intervals) running...`;
+  syncUi();
+}
+function robotBurstDone() {
+  const RB = app.rburst; app.rburst = null;
+  const R = RB.trackers.map((t) => t.result), ok = R.filter((r) => r && !r.jam).map((r) => r.t_exit), jams = R.filter((r) => !r || r.jam).length;
+  const errs = R.filter((r) => r && !r.jam && r.target).map((r) => `${sgn(100 * r.speed_err, 1)}%/${sgn(r.elev_err, 1)}`);
+  $('mixedRes').textContent = `robot-code burst x${RB.sched.length} (Y held, no speed check): entered at ${RB.sched.map((t) => fmt(t, 2)).join(' / ')} s; first exit to last `
+    + `${ok.length > 1 ? fmt(ok[ok.length - 1] - ok[0], 2) : '-'} s${jams ? `, ${jams} JAMMED` : ''}${errs.length ? `; speed/angle error ${errs.join(' ')}` : ''}  (simulated time)`;
+}
+
 /** MIXED: alternate POLLEN and NECTAR (burst-size balls), the hood switching between them at its servo's real speed. */
 function startMixed() {
   const s = app.s, n = Math.max(2, s.burst);
   app.queue = 0; s.auto = false; s.slow = 1;            // real time
-  app.mixed = { seq: Array.from({ length: n }, (_, i) => (i % 2 ? 'nectar' : 'pollen')), i: 0, feeds: [], trackers: [] };
+  app.mixed = { seq: Array.from({ length: n }, (_, i) => app.ballTypes[i % app.ballTypes.length]), i: 0, feeds: [], trackers: [] };   // one-ball turret: a same-ball burst
   $('mixedRes').textContent = `mixed burst: ${app.mixed.seq.map((b) => b[0].toUpperCase()).join(' ')} running...`;
   syncUi();
 }
@@ -395,7 +494,7 @@ function syncUi() {
   document.querySelectorAll('[data-ball]').forEach((b) => b.classList.toggle('on', b.dataset.ball === s.ball));
   document.querySelectorAll('[data-mode]').forEach((b) => { b.classList.toggle('on', b.dataset.mode === s.mode); if (b.dataset.mode === 'target') b.disabled = !app.map; });
   $('sliders-target').hidden = s.mode !== 'target'; $('sliders-direct').hidden = s.mode !== 'direct';
-  $('burstN').textContent = `x${s.burst}`; $('mixedN').textContent = `x${Math.max(2, s.burst)}`;
+  $('burstN').textContent = `x${app.manifest?.controller.robot_burst ? app.manifest.controller.robot_burst.n : s.burst}`; $('mixedN').textContent = `x${Math.max(2, s.burst)}`;
   $('auto').classList.toggle('on', s.auto);
   $('pause').textContent = s.paused ? 'Run (P)' : 'Pause (P)';
   document.querySelectorAll('#views button').forEach((b, i) => b.classList.toggle('on', b.id === 'cadbtn' ? !!s.cad : i === s.view));
@@ -411,7 +510,7 @@ function liveUi() {
   sol.classList.toggle('bad', !ok);
   $('l-rpm').textContent = `${fmt(B.wheelRpm(), 0).padStart(5)} / ${fmt(B.targetRpm(), 0)} rpm`;
   $('l-hood').textContent = `${sgn(B.armDeg(), 2).padStart(6)} / ${sgn(B.armTargetDeg(), 2)} deg` + (B.chain ? `  (servo ${B.servoDeg().toFixed(1)})` : '');
-  $('l-gap').textContent = `${sgn(B.gapMm(), 2).padStart(6)} / ${sgn(B.gapTargetMm(), 2)} mm`;
+  $('l-gap').textContent = `${sgn(B.gapMm(), 2).padStart(6)} / ${sgn(B.gapTargetMm(), 2)} mm` + (B.spring ? `  (spring ${fmt(B.spring.F, 0)} N)` : '');
   const hm = B.mech;                                  // the hood on its real mechanism: its servo
   $('k-hsv').style.display = hm ? '' : 'none';
   $('l-gap').previousElementSibling.textContent = hm ? 'hood travel' : B.passive ? 'hood (sprung)' : 'gap cam';
@@ -419,7 +518,7 @@ function liveUi() {
   $('l-motor').textContent = B.motor ? `${fmt(B.current, 2)} A, battery ${fmt(B.v_batt, 2)} V${B.M.controller.v10 ? `, lift ${fmt(B.lift.current, 2)} A` : ''}` : '-';
   const st = s.paused ? 'PAUSED' : app.tracker ? 'FIRING' : B.settled() ? 'READY' : 'SETTLING';
   const badge = $('l-state'); badge.textContent = st; badge.className = 'badge ' + st.toLowerCase();
-  $('l-queue').textContent = app.mixed ? `mixed ${app.mixed.i} / ${app.mixed.seq.length}` : `queue ${app.queue}${s.auto ? ' +auto' : ''}`;
+  $('l-queue').textContent = app.rburst ? `robot burst ${app.rburst.i} / ${app.rburst.sched.length}` : app.mixed ? `mixed ${app.mixed.i} / ${app.mixed.seq.length}` : `queue ${app.queue}${s.auto ? ' +auto' : ''}`;
   $('perf').textContent = `${fmt(app.fps, 0)} fps  ${fmt(app.achieved, 2)}x real time${s.slow > 1 ? ` (slow motion ${s.slow}x)` : ''}`;
   $('footer').textContent = `t ${fmt(app.sim.time, 2)} s   sim ${fmt(app.achieved, 2)}x real time (asked ${fmt(1 / s.slow, 2)}x)   ${app.shooter.balls.length} balls, ${app.manifest.counts.ngeom} geoms`;
 }
@@ -495,11 +594,12 @@ function renderStats() {
 
 function calInfo() {
   const c = app.map?.cal;
-  const v = app.variant.id;
-  if (!app.map) $('calinfo').textContent = 'No calibration for this variant: DIRECT mode only. Recalibrate to measure one here (about 1-3 min).';
-  else if (app.maps[v]) $('calinfo').textContent = `Measured in this browser (${c.pollen.n + c.nectar.n} shots, ${fmt(c.wall_s, 0)} s): natural bicubic interpolation through the grid means. Squeezes ${fmt(c.settings?.squeeze?.pollen, 1)} / ${fmt(c.settings?.squeeze?.nectar, 1)} mm, feeder ${fmt(c.settings?.feeder_u, 2)}.`;
-  else if (!c.pollen.spline_v) $('calinfo').textContent = `Measured calibration (${c.source}): grid means, ${c.pollen.n ?? '?'} + ${c.nectar.n ?? '?'} shots, interpolated. Valid for the design's squeeze settings.`;
-  else $('calinfo').textContent = `From the Python calibration (${c.source}): the same smoothing splines as shooter/calibrate.py, ${c.pollen.n ?? '?'} + ${c.nectar.n ?? '?'} shots. Valid for the design's squeeze settings.`;
+  const v = mapKey();
+  if (!app.map && !springCalibrated()) $('calinfo').textContent = 'No calibration for this spring: DIRECT mode only. Recalibrate to measure one here (about 1-3 min), or pick a spring marked (cal).';
+  else if (!app.map) $('calinfo').textContent = 'No calibration for this variant: DIRECT mode only. Recalibrate to measure one here (about 1-3 min).';
+  else if (app.maps[v]) $('calinfo').textContent = `Measured in this browser (${c.pollen.n + (c.nectar?.n ?? 0)} shots, ${fmt(c.wall_s, 0)} s): natural bicubic interpolation through the grid means. Squeezes ${fmt(c.settings?.squeeze?.pollen, 1)} / ${fmt(c.settings?.squeeze?.nectar, 1)} mm, feeder ${fmt(c.settings?.feeder_u, 2)}.`;
+  else if (!c.pollen.spline_v) $('calinfo').textContent = `Measured calibration (${c.source}): grid means, ${c.pollen.n ?? '?'} + ${c.nectar?.n ?? '-'} shots, interpolated. Valid for the design's squeeze settings.`;
+  else $('calinfo').textContent = `From the Python calibration (${c.source}): the same smoothing splines as shooter/calibrate.py, ${c.pollen.n ?? '?'} + ${c.nectar?.n ?? '-'} shots. Valid for the design's squeeze settings.`;
   $('calDownload').hidden = !app.maps[v];
 }
 
@@ -511,7 +611,7 @@ function recalibrate() {
   $('calprog').hidden = false; $('recalStop').hidden = false; $('recal').disabled = true;
   const bar = $('calprog').firstElementChild; bar.style.width = '0%';
   $('calinfo').textContent = 'Starting a second MuJoCo for the measurement...';
-  const vid = app.variant.id;
+  const vid = mapKey();
   w.onmessage = (ev) => {
     const d = ev.data;
     if (d.progress) {
@@ -519,14 +619,14 @@ function recalibrate() {
       $('calinfo').textContent = `Measuring the grid: shot ${i} / ${n}, ${fmt(t, 0)} s, about ${fmt(t / i * (n - i), 0)} s left`;
     } else if (d.done) {
       app.maps[vid] = new CalMap(d.done, 'interp');
-      if (app.variant.id === vid) { app.map = app.maps[vid]; app._cmdKey = null; }
+      if (mapKey() === vid) { app.map = app.maps[vid]; app._cmdKey = null; }
       endRecal(); calInfo(); syncUi();
     } else if (d.error || d.stopped) {
       endRecal(); calInfo();
       if (d.error) { $('calinfo').textContent = 'Recalibration failed: ' + d.error.split('\n')[0]; console.error(d.error); }
     }
   };
-  w.postMessage({ base: app.base, settings: { squeeze: { pollen: s.sq_pollen, nectar: s.sq_nectar }, feeder_u: s.feeder_u, per: 2, seed: 100 } });
+  w.postMessage({ base: app.base, settings: { squeeze: { pollen: s.sq_pollen, nectar: s.sq_nectar }, feeder_u: s.feeder_u, per: 2, seed: 100, loop: s.loop ?? undefined, spring: s.spring ?? undefined } });
 }
 function endRecal() {
   if (app.worker) app.worker.terminate();
@@ -554,21 +654,23 @@ function wireUi() {
   document.querySelectorAll('[data-ball]').forEach((b) => { b.onclick = () => { s.ball = b.dataset.ball; app._cmdKey = null; syncUi(); }; });
   document.querySelectorAll('[data-mode]').forEach((b) => { b.onclick = () => { s.mode = b.dataset.mode; syncUi(); }; });
   $('fire').onclick = fireOne;
-  $('burst').onclick = () => { app.queue += s.burst; };
+  $('burst').onclick = () => { if (app.manifest?.controller.robot_burst) startRobotBurst(); else app.queue += s.burst; };
   $('mixed').onclick = startMixed;
   $('auto').onclick = () => { s.auto = !s.auto; syncUi(); };
-  $('stop').onclick = () => { app.queue = 0; s.auto = false; app.mixed = null; syncUi(); };
+  $('stop').onclick = () => { app.queue = 0; s.auto = false; app.mixed = null; app.rburst = null; syncUi(); };
   $('pause').onclick = () => { s.paused = !s.paused; syncUi(); };
   $('resetStats').onclick = () => { app.shots = []; app.shotDirty = app.logDirty = true; };
-  $('resetSim').onclick = () => { app.shooter.reset(); app.view.clearTrails(); app.tracker = null; app.queue = 0; app.mixed = null; app.recov = null; app.strip.clear(); app.lastFeed = null; };
+  $('resetSim').onclick = () => { app.shooter.reset(); app.view.clearTrails(); app.tracker = null; app.queue = 0; app.mixed = null; app.rburst = null; app.recov = null; app.strip.clear(); app.lastFeed = null; };
   $('jitter').onchange = () => { s.jitter = $('jitter').checked; };
   $('vary').onchange = () => { s.vary = $('vary').checked; apply(); };
   $('collision').onchange = () => { s.collision = $('collision').checked; app.view.setShowCollision(s.collision); };
   $('variant').onchange = () => loadVariant($('variant').value).catch(fail);
+  $('loop').onchange = () => setLoop($('loop').value).catch(fail);
+  $('spring').onchange = () => setSpring($('spring').value).catch(fail);
   $('recal').onclick = recalibrate;
   $('recalStop').onclick = () => { endRecal(); calInfo(); };
   $('calDownload').onclick = () => {
-    const c = app.maps[app.variant.id]?.cal; if (!c) return;
+    const c = app.maps[mapKey()]?.cal; if (!c) return;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(c)], { type: 'application/json' }));
     a.download = `calibration_${app.variant.id}_browser.json`; a.click();
@@ -580,12 +682,12 @@ function wireUi() {
     if (e.target.tagName === 'SELECT' || (e.target.tagName === 'INPUT' && e.target.type !== 'range' && e.target.type !== 'checkbox')) return;
     const k = e.key.toLowerCase();
     if (k === ' ') { e.preventDefault(); fireOne(); }
-    else if (k === 'b') app.queue += s.burst;
+    else if (k === 'b') { if (app.manifest?.controller.robot_burst) startRobotBurst(); else app.queue += s.burst; }
     else if (k === 'x') startMixed();
     else if (k === 'a') s.auto = !s.auto;
     else if (k === 'r') { app.shots = []; app.shotDirty = app.logDirty = true; }
     else if (k === '1') s.ball = 'pollen';
-    else if (k === '2') s.ball = 'nectar';
+    else if (k === '2' && app.ballTypes.includes('nectar')) s.ball = 'nectar';
     else if (k === 'm' && app.map) s.mode = s.mode === 'target' ? 'direct' : 'target';
     else if (k === 'v') setView(s.view + 1);
     else if (k === 'l') setCad(!s.cad);

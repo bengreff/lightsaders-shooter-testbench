@@ -1,0 +1,202 @@
+{
+ "spigot": {
+  "group": "print",
+  "col": "#4fa8bd",
+  "note": "printed bore spigot: through the 3208's 105 mm bore, flange on the gear"
+ },
+ "base": {
+  "group": "print",
+  "col": "#4fa8bd",
+  "note": "printed base piece"
+ },
+ "plate_p": {
+  "group": "acetal",
+  "col": "#2a2a2c",
+  "note": "side plate, servo side (+u)"
+ },
+ "plate_m": {
+  "group": "acetal",
+  "col": "#2a2a2c",
+  "note": "side plate, motor side (-u)"
+ },
+ "plate_ear_screws": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "4 x M4 x 18 button heads into captured nuts"
+ },
+ "motor": {
+  "group": "bought",
+  "col": "#1e1e20",
+  "note": "goBILDA 5203 Yellow Jacket"
+ },
+ "motor_screws": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "4 x M4 x 12 button heads"
+ },
+ "servo": {
+  "group": "bought",
+  "col": "#1e1e20",
+  "note": "goBILDA 2000-0025-0003 servo (25-3 Speed)"
+ },
+ "servo_standoffs": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "4 x 10 mm M4 standoffs + screws"
+ },
+ "servo_hub": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "goBILDA 1906 servo hub"
+ },
+ "pinion": {
+  "group": "acetal",
+  "col": "#d99a3f",
+  "note": "acetal 30T MOD 1.5 pinion"
+ },
+ "fly_shaft": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "12 mm REX shaft, 222.5 mm"
+ },
+ "fly_bearings_plates": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "6801 bearings in the side plates"
+ },
+ "fly_spacers": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "12 mm ID spacer stacks"
+ },
+ "fly_collars": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "2910 clamping collars"
+ },
+ "fly_hub": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "1310 Hyper Hub, 12 mm REX"
+ },
+ "steel_discs": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "4 steel flywheel discs + 16 screws"
+ },
+ "htd_pulleys": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "HTD 24T:24T + 1301 hub"
+ },
+ "htd_belt": {
+  "group": "bought",
+  "col": "#19191a",
+  "note": "HTD 5 mm 275 mm belt"
+ },
+ "sq_shaft": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "8 mm REX shaft, 1611 bearings, collars"
+ },
+ "sq_driven": {
+  "group": "print",
+  "col": "#4fa8bd",
+  "note": "printed HTD 3M 95T"
+ },
+ "sq_driver": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "HTD 3M 25T on the flywheel shaft"
+ },
+ "sq_belt": {
+  "group": "bought",
+  "col": "#19191a",
+  "note": "HTD 3M 444 mm belt"
+ },
+ "top_half": {
+  "group": "print",
+  "col": "#f2c94c",
+  "note": "printed POLLEN top half"
+ },
+ "top_plates": {
+  "group": "acetal",
+  "col": "#2a2a2c",
+  "note": "top half plates (+u carries the sector)"
+ },
+ "top_hw": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "bearings, pins (22 mm standoffs), joint screws"
+ },
+ "lower_half": {
+  "group": "print",
+  "col": "#f2c94c",
+  "note": "printed POLLEN lower half"
+ },
+ "lower_plates": {
+  "group": "acetal",
+  "col": "#2a2a2c",
+  "note": "lower half plates"
+ },
+ "lower_hw": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "bearings, joint screws, pawl pivot"
+ },
+ "pawl": {
+  "group": "acetal",
+  "col": "#d99a3f",
+  "note": "acetal latch pawl"
+ },
+ "nectar_tooth": {
+  "group": "print",
+  "col": "#4fa8bd",
+  "note": "printed NECTAR central tooth"
+ },
+ "nectar_plates": {
+  "group": "acetal",
+  "col": "#2a2a2c",
+  "note": "NECTAR tooth plates"
+ },
+ "nectar_hw": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "bearings, joint screws"
+ },
+ "latch_ring": {
+  "group": "acetal",
+  "col": "#5a7f8a",
+  "note": "acetal latch ring"
+ },
+ "latch_posts": {
+  "group": "bought",
+  "col": "#cfd2d8",
+  "note": "3 x 12 mm M4 standoffs"
+ },
+ "hogback": {
+  "group": "bought",
+  "col": "#3b3f45",
+  "note": "Hogback 96 mm"
+ },
+ "squishy": {
+  "group": "bought",
+  "col": "#7b5fd6",
+  "note": "the team's cast squishy wheel (3.5 in)"
+ },
+ "base_screws": {
+  "group": "bought",
+  "col": "#a9adb4",
+  "note": "6 x M4 into the gear's tapped holes"
+ },
+ "turret_3208": {
+  "group": "robot",
+  "col": "#b9bcc2",
+  "note": "the robot's goBILDA 3208 gear-driven turret (stays)"
+ },
+ "robot": {
+  "group": "robot",
+  "col": "#4a4d52",
+  "note": "the robot's turret plate + turret drive (stay)"
+ }
+}

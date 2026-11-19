@@ -1,4 +1,17 @@
-# Lightsaders BIOBUZZ turret v5
+# Lightsaders BIOBUZZ turret testbench
+
+FTC team 12928 Lightsaders, 2026-27 season. Three turrets in one simulator, picked from the menu (group "Compare"):
+1. **Team turret**: the POLLEN turret on our robot today, decoded from the team's CAD, running the robot's own speed loop.
+2. **v5 active**: our design for both balls (POLLEN and NECTAR), one motor and one servo.
+3. **Passive sprung**: a benchmark only; v4's one hood held by an abstract spring, pushed open by a NECTAR.
+
+- **[Turret comparison](compare/)**: the fair comparison of the three, every number and how it was measured.
+- **[v5 build pack](build/)**: parts list, plates to cut, prints (sliced), assembly steps and the STEP.
+
+All numbers come from this simulator, an ideal environment: no measurement error and no hardware precision limits, so real life will likely
+be slightly lower.
+
+## Turret v5 in detail
 
 Our FTC team's turret shooter for the 2026-27 BIOBUZZ season, for both balls, simulated: the parts that touch a ball, the
 mechanisms that move the hood pieces and the frame that holds them (drawn; the robot's goBILDA 3208 gear ring is shown underneath).
@@ -8,8 +21,15 @@ mechanisms that move the hood pieces and the frame that holds them (drawn; the r
   that pushes each ball up the turret's bore against its front wall and into the flywheel.
 - **One servo** (goBILDA 2000-0025-0003, 25-3 Speed, at 6 V through a REV Servo Hub or servo power module) turns a 40-tooth
   sector gear on the flywheel axle (1.333 : 1), so 213 deg of hood travel is 284 deg of servo.
-- **The flywheel's speed loop is the team's code** (the hub's own loop, gains 160 / 0 / 0 / 15.2), on the motor as fitted to our
-  robot's logs: no overshoot, it settles about 25 rpm under its target and drops 500 rpm in about half a second.
+- **The flywheel: 1 Hogback + 4 steel discs, and our own speed loop**, on the motor as fitted to our robot's logs. Every 10 ms, from
+  the encoder's whole ticks, the battery voltage and the robot's own feed command: the motor model predicts the speed (corrected by
+  what the loop has learned the model misses), the ticks correct it, smoothly while the wheel runs steady and quickly just after a
+  ball is fed; the motor gets the feedforward for the target speed + a proportional term + an integral that learns only while the
+  wheel is steady (a shot never winds it up); full power when more than 3 % low; "ready" = within 0.5 % for 50 ms. Its motor model
+  is deliberately 3-30 % off, so the simulation does not flatter it. After a shot it stays at full power until the speed it
+  predicts 20 ms ahead is within 0.3 % of the target (no slow tail, no overshoot from its own lag). After a NECTAR shot at 3000 rpm the
+  wheel comes back within 0.5 % in 0.28 s with 5 rpm of overshoot and then holds within about 5 rpm (the team's hub loop,
+  160 / 0 / 0 / 15.2, sits 15-20 rpm low). Full power is the limit: about 0.3 s to put back what a ball takes.
 - **Every hood part turns about the flywheel axle** on ball bearings, with arms on both sides of the flywheel, and every
   ball-contact face is a surface of revolution about that axle:
   - **POLLEN hood** (yellow): face radius 118.3 mm, trough section radius 39.9 mm, 73 mm wide. Two parts: a lower half (the
@@ -43,16 +63,17 @@ mechanisms that move the hood pieces and the frame that holds them (drawn; the r
   - the motor sits behind the bore, 24T:24T HTD 5M on a stock 275 mm belt; the squishy is fixed, driven 1 : 3.8 by HTD 3M 25T:95T on
     a stock 444 mm belt (no idler);
   - the servo is screwed to its plate on 4 standoffs.
-- **Mass as drawn:** about 3.6 kg (prints counted at 1.0 g/cm3), of which the 6 steel flywheel discs are 0.9 kg.
+- **Mass as drawn:** about 3.25 kg (prints counted at 1.0 g/cm3), of which the 4 steel flywheel discs are 0.6 kg.
 
 ## Measured in this simulation
 | | |
 |---|---|
-| Calibration grid (both balls, 1600-4400 rpm, every hood setting) | 468 shots, 0 jams |
-| TARGET mode check, 30 random targets per ball | POLLEN 1.0 % speed / 1.3 deg rms error; NECTAR 1.2 % / 0.7 deg |
+| Calibration grid (both balls, 1600-4400 rpm, every hood setting, 6 shots a point) | 1404 shots, 0 jams |
+| TARGET check: 60 random targets per ball, each fired 4 times | the map's own error (rms): POLLEN 0.45 % speed / 0.77 deg, NECTAR 0.79 % / 0.48 deg; shot-to-shot spread of the balls themselves: POLLEN 0.69 % / 1.14 deg, NECTAR 0.34 % / 0.62 deg |
 | Mechanisms + frame over the whole servo travel | no part touches another; every part at least 1.2 mm from the balls |
 | Reach from the swivel axis (R105, 228.6 mm) | 173.9 mm at most |
-| MIXED P N P N (6.0 m/s at 65 deg, and 7.5 m/s at 58 deg; 4 bursts) | 1.76-1.85 s from the first ball's exit to the last, 0 jams |
+| Six balls of one kind in a row (6.0 m/s at 65 deg) | POLLEN 1.65 s, NECTAR 1.58 s from the first exit to the last, 0 jams |
+| MIXED P N P N (6.0 m/s at 65 deg, and 7.5 m/s at 58 deg; 9 bursts each) | 1.81-1.85 s from the first ball's exit to the last, 0 jams; speed error 0.74-1.01 % rms, elevation 0.77-1.44 deg |
 
 ## What is NOT verified
 - Nothing here has been built. The frame's goBILDA parts are placed from their own CAD; the bearings' flanges, the 25T pulley and
@@ -60,8 +81,7 @@ mechanisms that move the hood pieces and the frame that holds them (drawn; the r
   are checked as solids (no overlaps over the whole servo travel), not simulated as forces.
 - The squishy's stiffness is fitted to one hand measurement; its deepest squash (33 mm here) is a guess.
 - The servo's loop gains and rotor inertia are guesses, and the hood is rigid against the balls here: how far a real servo
-  gives under the ball's push is not measured. The calibration grid was shot with the old speed loop and re-keyed to the new one's
-  commands; it has not been re-shot.
+  gives under the ball's push is not measured. Our speed loop runs in this simulation; the robot's code does not run it yet.
 - The ball, tread and air laws are the testbench's (calibrated against the goBILDA StarterBot launcher's shots and our
   ball measurements); this geometry has never met a real ball.
 

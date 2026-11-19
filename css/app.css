@@ -98,6 +98,7 @@ footer { margin-top: 18px; }
 
 #about { position: fixed; inset: 0; background: rgba(5,7,10,0.6); z-index: 10; display: flex; align-items: center; justify-content: center; }
 #about[hidden] { display: none; }
+.field[hidden] { display: none; }
 #about .sheet { width: min(720px, 92vw); max-height: 84vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--edge);
   border-radius: 12px; padding: 22px 26px; position: relative; line-height: 1.6; }
 #about .close { position: absolute; top: 14px; right: 14px; }

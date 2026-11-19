@@ -34,6 +34,9 @@
   "RELIEF": 2.0,
   "PGAP": 2.0,
   "PRAD": 1.1,
+  "PUL_M": 24,
+  "PUL_F": 24,
+  "NDISC": 4,
   "START_DX": -1.0,
   "START_DZ": 2.0,
   "ONEHOOD": 1,
@@ -61,7 +64,7 @@
   "V5_SPEED": 180.0,
   "V5_SV_STALL": 0.918,
   "V5_SV_PROF": 1,
-  "FLY_LAW": 1,
+  "FLY_LAW": 2,
   "V5_MECH": 1,
   "V5_FRAME": 1,
   "V5_LFROM": 38.0
@@ -1326,15 +1329,45 @@
     "actuator": "fly_motor",
     "spin": 1,
     "tpr": 28.0,
-    "P": 160.0,
+    "P": 0.0,
     "I": 0.0,
     "D": 0.0,
-    "F": 14.476190476190474,
+    "F": 0.0,
     "target_rpm": 3500.0,
     "radius": 0.048,
     "ratio": 1.0,
-    "law": "team",
-    "why": "BiobuzzConstants.PIDF (160, 0, 0, 15.2), F x 12 / battery volts at init (BiobuzzTeleopV4), setVelocity(rpm / 60 x 28)"
+    "law": "pro",
+    "why": "ours: every 10 ms from whole encoder ticks + the battery voltage: a model-based alpha-beta-gamma observer (speed + the load the model does not know), volts = back-EMF + friction + the estimated load + Kp x error, full duty below boost; ready = within tol for hold_s. Its motor model is deliberately off (model_err) so the sim does not flatter it",
+    "model": {
+     "J": 0.0008479203391541776,
+     "Kt": 0.0148695652173913,
+     "Ke": 0.021201599747970104,
+     "R": 1.3695652173913044,
+     "Tf": 0.02119,
+     "b": 9.600000000000001e-06,
+     "Vn": 12.6,
+     "lam": 0.9,
+     "lamf": 0.7,
+     "trig": 2.0,
+     "fast_s": 0.25,
+     "Kp": 0.5,
+     "Ki": 2.0,
+     "iband": 0.01,
+     "bend": 0.003,
+     "lead_s": 0.02,
+     "kick_s": 0.0,
+     "boost": 0.03,
+     "tol": 0.005,
+     "hold_s": 0.02,
+     "model_err": {
+      "J": 1.1,
+      "Kt": 0.95,
+      "Ke": 1.03,
+      "R": 1.05,
+      "Tf": 1.3,
+      "b": 0.8
+     }
+    }
    }
   ],
   "motor": {
@@ -1349,8 +1382,8 @@
    "battery_r": 0.15,
    "ratio": 1.0,
    "belt_r": [
-    0.012732395447351628,
-    0.012732395447351628
+    0.01909859317102744,
+    0.01909859317102744
    ],
    "belt_k": 300000.0,
    "belt_c": 15.0,
@@ -1843,7 +1876,7 @@
  },
  "design": {
   "height_m": 0.0,
-  "gate_tol": 0.03,
+  "gate_tol": 0.005,
   "angle_travel_deg": 15.5,
   "inject_speed": 0.0,
   "squeeze_pollen_mm": 2.2,
@@ -1858,8 +1891,8 @@
   "angle_ratio": 1.0,
   "take_s": 1.2,
   "max_s": 1.8,
-  "pulley_motor": 16,
-  "pulley_fly": 16,
+  "pulley_motor": 24,
+  "pulley_fly": 24,
   "exit_mid_deg": 69.5,
   "flags": {
    "sprung_hood": true,
@@ -1995,7 +2028,7 @@
      "m_fly_spacers": "steel",
      "m_fly_collars": "alu",
      "m_fly_hub": "vendor:1310-0016-4012",
-     "m_steel_discs": "vendor:3628-0032-0082:6",
+     "m_steel_discs": "vendor:3628-0032-0082:4",
      "m_fly_screws": "steel:16",
      "m_htd_pulley_fly": "vendor:3411-0014-0024",
      "m_htd_pulley_motor": "vendor:3417-4008-0024",
@@ -2148,32 +2181,6 @@
       "R": [
        [
         0.0,
-        1.0,
-        0.0
-       ],
-       [
-        -1.0,
-        0.0,
-        0.0
-       ],
-       [
-        0.0,
-        0.0,
-        1.0
-       ]
-      ],
-      "t": [
-       30.0,
-       0.0,
-       0.0
-      ]
-     },
-     {
-      "sku": "3628-0032-0082",
-      "part": "steel_discs",
-      "R": [
-       [
-        0.0,
         -1.0,
         0.0
        ],
@@ -2216,32 +2223,6 @@
       ],
       "t": [
        -24.0,
-       0.0,
-       0.0
-      ]
-     },
-     {
-      "sku": "3628-0032-0082",
-      "part": "steel_discs",
-      "R": [
-       [
-        0.0,
-        -1.0,
-        0.0
-       ],
-       [
-        1.0,
-        0.0,
-        0.0
-       ],
-       [
-        0.0,
-        0.0,
-        1.0
-       ]
-      ],
-      "t": [
-       -30.0,
        0.0,
        0.0
       ]

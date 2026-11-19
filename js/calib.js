@@ -96,6 +96,7 @@ export class CalMap {
     this.f = {}; this.sel = {}; this.default_sq = {};
     for (const bt of ['pollen', 'nectar']) {
       const c = cal[bt];
+      if (!c) continue;                              // a one-ball turret (the team POLLEN turret): no map for the other ball
       const L = this.mode === 'spline' && c.levels ? c.levels : [{ sq: c.default_sq ?? null, spline_v: c.spline_v, spline_e: c.spline_e, grid: c.grid }];
       this.f[bt] = L.map((l) => [l.sq, this.mode === 'spline' ? bispline(l.spline_v) : bicubicInterp(l.grid.arms, l.grid.rpms, l.grid.v),
         this.mode === 'spline' ? bispline(l.spline_e) : bicubicInterp(l.grid.arms, l.grid.rpms, l.grid.e)]).sort((a, b) => a[0] - b[0]);
@@ -154,10 +155,11 @@ export class CalMap {
 export async function measureGrid(shooter, onProgress = () => {}, per = 2, rpms = RPMS, shouldStop = () => false) {
   const B = shooter, T = B.D.angle_travel_deg;
   const arms = armGrid(T);
-  const n = 2 * rpms.length * arms.length * per; let i = 0;
+  const types = B.D.balls || ['pollen', 'nectar'];   // the balls this turret shoots
+  const n = types.length * rpms.length * arms.length * per; let i = 0;
   const rows = [];
-  B.setBall('pollen'); B.setAngle(arms[0]); B.spinUp(rpms[0]);
-  for (const bt of ['pollen', 'nectar']) {
+  B.setBall(types[0]); B.setAngle(arms[0]); B.spinUp(rpms[0]);
+  for (const bt of types) {
     B.setBall(bt);
     for (let ri = 0; ri < rpms.length; ri++) {
       B.setRpm(rpms[ri]);
@@ -180,6 +182,7 @@ export async function measureGrid(shooter, onProgress = () => {}, per = 2, rpms 
 export function fitGrid(rows, T, rpms = RPMS) {
   const cal = { travel: T, rpms, source: 'measured in the browser', rows };
   for (const bt of ['pollen', 'nectar']) {
+    if (!rows.some((r) => r.type === bt)) continue;   // a ball this turret does not shoot
     const R = rows.filter((r) => r.type === bt && !r.jam);
     const arms = [...new Set(R.map((r) => r.arm))].sort((a, b) => a - b);
     const rr = [...new Set(R.map((r) => r.rpm))].sort((a, b) => a - b);

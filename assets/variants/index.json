@@ -1,9 +1,23 @@
 [
  {
+  "id": "team_pollen",
+  "folder": "team_pollen",
+  "label": "1. Team turret (on the robot today)",
+  "group": "Compare",
+  "describe": "The team's POLLEN turret exactly as in turret pollen.SLDASM (decoded 2026-11-18): 1 goBILDA Hogback 96 on a GT2 1:1 belt, the half-pipe hood (R 36, 3.6 mm squeeze on a 72.53 mm POLLEN, 60 deg ramp) pivoting on the flywheel axle through the servo's 45T -> 90T gears, its stationary lower piece, the 75 mm channel between the side panels and the conical bore the ball rises through. The ball contacts are the CAD's own surfaces; everything else is drawn for reference. Angle slider: hood 0-16 deg above its stop (servo 0.88-0.761). The transfer is not modelled: every ball starts at a random point of the bore (up to touching its wall) with a random speed (0.5-2 m/s) and tilt (to 10 deg), pushed until it reaches the tire. Flywheel: the plant fitted to the robot's logs and the team's speed loop. POLLEN only."
+ },
+ {
   "id": "onehood_v5m",
   "folder": "onehood_v5m",
-  "label": "Turret v5 + hood mechanisms (wider lanes)",
-  "group": "Design",
+  "label": "2. v5 active (ours)",
+  "group": "Compare",
   "describe": "Turret v5 with its hood mechanisms (2026-11-16): one motor (flywheel + the squishy geared off it) and ONE servo through a sector gear. Every hood part turns about the flywheel axle on bearings. POLLEN hood (yellow): a latched lower half and a geared top half joined by one pin per side; NECTAR hood (blue): static side teeth on a solid support and a central tooth the same pin pushes. Changing the ball swings the POLLEN hood up over the wheel (0.48-0.64 s with the goBILDA 25-3 Speed servo at 6 V, modelled; it slows where the lower half lands). The flywheel runs the team's speed loop (fitted to the robot's logs). MIXED fires POLLEN, NECTAR, ... in real time."
+ },
+ {
+  "id": "passive_sprung",
+  "folder": "passive_sprung",
+  "label": "3. Passive sprung (contact geometry only)",
+  "group": "Compare",
+  "describe": "The passive turret, contact geometry only: turret v4's one hood for both balls on a free straight slide (19.3 mm along 38 deg), pushed onto its POLLEN seat by an abstract spring; a NECTAR pushes it out to the NECTAR stop by itself. One servo sets the exit angle (the tip fingers). Spring selector: the optimiser's best linear, near-constant-force and falling (two-stage) springs, each with its damping, stop and the sprung mass. Same feed as the fair comparison: every ball starts at a random point of the bore with a random speed and tilt. Flywheel loop: the robot's code exactly, or ours."
  }
 ]

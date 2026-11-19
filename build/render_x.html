@@ -1,0 +1,62 @@
+<!doctype html><html><head><meta charset="utf-8"><title>render</title>
+<style>html,body{margin:0;height:100%;background:#f4f3ef;overflow:hidden}#v{position:fixed;inset:0}#hud{position:fixed;left:10px;top:8px;font:12px system-ui;color:#555}</style>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"}}</script>
+</head><body><div id="v"></div><div id="hud"></div><script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const Q = new URLSearchParams(location.search), num = s => s.split(',').map(Number);
+const R = new THREE.WebGLRenderer({antialias: true, preserveDrawingBuffer: true}); R.setPixelRatio(Math.min(2, devicePixelRatio));
+document.getElementById('v').appendChild(R.domElement);
+const S = new THREE.Scene(); S.background = new THREE.Color(Q.get('bg') || '#f4f3ef');
+const C = new THREE.PerspectiveCamera(28, 1, 2, 8000); C.up.set(0, 0, 1);
+const O = new OrbitControls(C, R.domElement);
+S.add(new THREE.HemisphereLight(0xffffff, 0x8a8a8a, 1.7));
+const L1 = new THREE.DirectionalLight(0xffffff, 1.5); L1.position.set(400, 300, 600); S.add(L1);
+const L2 = new THREE.DirectionalLight(0xffffff, 0.6); L2.position.set(-400, -300, 200); S.add(L2);
+function size(){ R.setSize(innerWidth, innerHeight); C.aspect = innerWidth / innerHeight; C.updateProjectionMatrix(); }
+addEventListener('resize', size); size();
+const mat = (col, op = 1, metal = 0) => new THREE.MeshStandardMaterial({color: col, roughness: .6, metalness: metal, transparent: op < 1, opacity: op, depthWrite: op >= 1, side: THREE.DoubleSide});
+function fit(box, dir){ const c = box.getCenter(new THREE.Vector3()), r = box.getSize(new THREE.Vector3()).length() / 2;
+  const d = new THREE.Vector3(...dir).normalize(); const dist = r / Math.sin(THREE.MathUtils.degToRad(C.fov / 2)) * (+Q.get('zoom') || 0.92);
+  C.position.copy(c).addScaledVector(d, dist); O.target.copy(c); O.update(); }
+function done(){ R.render(S, C); document.title = 'ready'; (function loop(){ requestAnimationFrame(loop); R.render(S, C); })(); }
+const mode = Q.get('mode') || 'asm';
+if (mode === 'asm') {
+  const meta = await (await fetch('asm_x.json')).json();
+  const show = (Q.get('show') || '').split(',').filter(Boolean), hl = (Q.get('hl') || '').split(',').filter(Boolean);
+  new GLTFLoader().load('asm_x.glb', g => {
+    const box = new THREE.Box3();
+    g.scene.traverse(o => { if (!o.isMesh) return; const n = o.name, m = meta[n]; if (!m) { o.visible = false; return; }
+      const isH = hl.includes(n), isS = show.includes(n) || show.includes('all');
+      if (!isH && !isS) { o.visible = false; return; }
+      o.material = isH ? mat(m.col, 1, m.group === 'bought' ? .25 : 0) : mat('#c9c9c4', Q.get('ghost') ? +Q.get('ghost') : 0.35);
+      if (isH) box.expandByObject(o); });
+    S.add(g.scene);
+    if (Q.get('cam')) { const cp = new THREE.Vector3(...num(Q.get('cam'))), tg = new THREE.Vector3(...num(Q.get('target') || '0,0,0'));
+      fit(box, cp.sub(tg).toArray()); } else fit(box, [1, 1, .6]);                 // the step's own parts fill the picture, seen from its direction
+    done(); });
+} else {
+  const part = Q.get('part'), col = Q.get('col') || '#f2c94c';
+  new GLTFLoader().load('print/' + part + '.glb', async g => {
+    g.scene.traverse(o => { if (o.isMesh) o.material = mat(col); }); S.add(g.scene);
+    const box = new THREE.Box3().setFromObject(g.scene);
+    try { const buf = await (await fetch('print/' + part + '.sup.bin')).arrayBuffer();
+      if (buf.byteLength) {                                   // each support extrusion as a solid bead: 0.42 wide, one layer tall
+        const f = new Float32Array(buf), n = f.length / 6, lh = +(Q.get('lh') || 0.2), w = 0.42;
+        const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({color: Q.get('scol') || '#1f9e89', roughness: .8}), n);
+        const M = new THREE.Matrix4(), P = new THREE.Vector3(), R = new THREE.Quaternion(), Sc = new THREE.Vector3(), Zax = new THREE.Vector3(0, 0, 1);
+        const lo = new THREE.Vector3(1e9, 1e9, 1e9), hi = new THREE.Vector3(-1e9, -1e9, -1e9);
+        for (let i = 0; i < n; i++) { const k = 6 * i, dx = f[k + 3] - f[k], dy = f[k + 4] - f[k + 1];
+          P.set((f[k] + f[k + 3]) / 2, (f[k + 1] + f[k + 4]) / 2, f[k + 2] - lh / 2); R.setFromAxisAngle(Zax, Math.atan2(dy, dx));
+          Sc.set(Math.hypot(dx, dy) + w, w, lh); inst.setMatrixAt(i, M.compose(P, R, Sc)); lo.min(P); hi.max(P); }
+        S.add(inst); box.union(new THREE.Box3(lo, hi)); } } catch (e) {}
+    const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+    const bed = new THREE.Mesh(new THREE.PlaneGeometry(sz.x + 60, sz.y + 60), new THREE.MeshStandardMaterial({color: '#3a3d42', roughness: .9}));
+    bed.position.set(c.x, c.y, -0.05); S.add(bed);
+    const grid = new THREE.GridHelper(Math.max(sz.x, sz.y) + 60, Math.round((Math.max(sz.x, sz.y) + 60) / 10), 0x5a5e66, 0x4a4e55);
+    grid.rotation.x = Math.PI / 2; grid.position.set(c.x, c.y, 0.02); S.add(grid);
+    const v = Q.get('view') === 'b' ? [-1, 1.1, .55] : [1.05, -1.2, .75]; fit(box, v); done(); });
+}
+document.getElementById('hud').textContent = Q.get('hud') || '';
+</script></body></html>

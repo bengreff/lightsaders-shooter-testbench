@@ -1,0 +1,251 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Turret Comparison</title><style>
+:root{--bg:#fbfbfc;--fg:#1c1f24;--mute:#5d646d;--line:#dfe2e6;--card:#f1f3f5;--acc:#1f6fb2;--onacc:#ffffff;--warnbg:#fff6e0;--warn:#8a5a00;
+ --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--grid:#e6e8eb}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#e6e8eb;--mute:#9aa1aa;--line:#2b2f36;--card:#1b1e23;--acc:#7cc4ff;--onacc:#0b0d10;
+ --warnbg:#2b2410;--warn:#f2c94c;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--grid:#262a30}}
+:root[data-theme="dark"]{--bg:#14161a;--fg:#e6e8eb;--mute:#9aa1aa;--line:#2b2f36;--card:#1b1e23;--acc:#7cc4ff;--onacc:#0b0d10;--warnbg:#2b2410;--warn:#f2c94c;
+ --s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--grid:#262a30}
+*{box-sizing:border-box} html{background:var(--bg)} body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 64px} h1{font-size:28px;margin:0 0 4px} h2{font-size:21px;margin:36px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+h3{font-size:17px;margin:22px 0 8px} a{color:var(--acc)} p{margin:8px 0} .sub{color:var(--mute);font-size:13px}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0} .links a{padding:7px 12px;border:1px solid var(--line);border-radius:6px;text-decoration:none;background:var(--card)}
+.warnbox{background:var(--warnbg);border:1px solid var(--warn);border-radius:8px;padding:12px 16px;margin:14px 0} .warnbox b{color:var(--warn)}
+.verdict{background:var(--card);border-left:4px solid var(--acc);border-radius:6px;padding:10px 18px;margin:14px 0}
+.wrap{overflow-x:auto} table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px} th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600} table.glance td:not(:first-child),table.glance th:not(:first-child){width:21%} tr.grp th{color:var(--fg);background:var(--card);font-size:13px;padding-top:10px}
+td.na{color:var(--mute)} tr.ref td{color:var(--mute)} .num td{font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin:6px 0} .seg button{background:var(--card);color:var(--fg);border:0;padding:7px 12px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--acc);color:var(--onacc)} .small{font-size:13px;color:var(--mute)} .pend{color:var(--warn);font-style:italic}
+details{border:1px solid var(--line);border-radius:8px;margin:10px 0} summary{cursor:pointer;padding:10px 14px;font-weight:600} .det{padding:0 16px 12px}
+img{max-width:100%;border-radius:6px} ul{padding-left:20px} li{margin:3px 0}
+.chart{width:100%;height:auto;display:block;max-width:900px} .chart .grid{stroke:var(--grid);stroke-width:1} .chart .ref{stroke:var(--mute);stroke-dasharray:4 4;stroke-width:1}
+.chart .ax{fill:var(--mute);font-size:12px} .chart .lab{fill:var(--fg);font-size:12px} .chart .ln{fill:none;stroke-width:2} .chart .pt{stroke:var(--bg);stroke-width:2}
+.ln.s1{stroke:var(--s1)} .ln.s2{stroke:var(--s2)} .ln.s3{stroke:var(--s3)} .pt.s1{fill:var(--s1)} .pt.s2{fill:var(--s2)} .pt.s3{fill:var(--s3)} .pt.s4{fill:var(--s4)}
+.chart circle.pt,.chart rect.pt{cursor:default} .chart circle.pt:hover,.chart rect.pt:hover{stroke:var(--fg)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mute);margin:6px 0} .key{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:14px;height:3px;border-radius:2px} .sw.sq{width:10px;height:10px} .sw.s1{background:var(--s1)} .sw.s2{background:var(--s2)} .sw.s3{background:var(--s3)} .sw.s4{background:var(--s4)}
+@media (max-width:640px){table{font-size:13px} th,td{padding:6px}}
+</style></head><body><main>
+<h1>Turret comparison</h1>
+<div class="sub">FTC team 12928 Lightsaders, BIOBUZZ 2026-27. Updated 2026-11-19. The team's turret on the robot today, our v5 design, and a sprung passive turret built as a benchmark.</div>
+<div class="links"><a href="../?variant=team_pollen">Testbench: team turret</a><a href="../?variant=onehood_v5m">Testbench: v5 active</a><a href="../?variant=passive_sprung">Testbench: passive sprung</a>
+<a href="../build/">v5 build pack</a><a href="Active_or_Passive_Hood.pdf">Active or passive guide (PDF)</a></div>
+
+<div class="warnbox"><b>Simulator numbers: a best case.</b> Every consistency and hit number on this page comes from the testbench simulator, an ideal
+environment. Each part is exactly its CAD shape, nothing wears or loosens, and the sim does not count measurement error or hardware precision
+limits (print tolerance, backlash, servo resolution, sensor noise, flex beyond the model). Real life will likely be slightly lower for all three
+turrets. The comparison between them is fair, because all three get the same inputs; read the absolute numbers as upper bounds.</div>
+
+<div class="verdict">
+<p><b>v5 is the best of the three.</b> On the shots all three can reach it lands about 99 % of POLLEN, the passive turret 97-99 % and the team turret
+92-96 %, and it is the steadiest shot to shot (exit speed spread 0.3 %, against 1.4 % and 1.8 %). Only v5 and the passive turret shoot NECTAR.</p>
+<p><b>The passive turret cannot fire a fast mixed burst.</b> Fed back to back, a 4-ball mixed burst takes about half a second but only
+44 % of its balls land, and no ball fired right after a NECTAR lands: each NECTAR takes 15 % off the wheel speed
+and the wheel cannot recover in time. No shot position reaches 90 %. v5's fastest mixed burst takes 1.3 s and lands 81 %.
+At the robot's real feed gaps v5 lands 96 % of mixed balls and the passive turret 89-90 %.</p>
+<p>The team turret is lighter (1.27 vs 3.32 kg) and on the robot today. v5 can be built from tomorrow (build pack linked).</p></div>
+
+<h2>At a glance</h2>
+<p class="small">All numbers sim. Showing <span class="loopname">the robot's own loop (Meet 1 code)</span>. Same random ball feed, same seeds and the
+same scoring for every turret; hits only on shots every compared turret can reach.</p>
+<div class="seg" role="group" aria-label="speed loop"><button data-loop="r" aria-pressed="true">Robot's own loop</button><button data-loop="o" aria-pressed="false">Our improved loop</button></div>
+<div class="wrap"><table class="glance num"><thead><tr><th></th><th>Team turret</th><th>v5 active</th><th>Passive sprung</th></tr></thead><tbody>
+<tr class="grp"><th colspan="4">Single shots, POLLEN (11 still and 43 moving positions all three can reach)</th></tr>
+<tr><td>Balls landing, robot still</td><td class="lv" data-r="91.6 %" data-o="92.0 %">91.6 %</td><td>98.8 %</td><td class="lv" data-r="97.4 %" data-o="98.1 %">97.4 %</td></tr>
+<tr><td>Balls landing, robot moving (up to 0.6 m/s)</td><td class="lv" data-r="95.3 %" data-o="95.7 %">95.3 %</td><td class="lv" data-r="99.7 %" data-o="99.6 %">99.7 %</td><td class="lv" data-r="99.0 %" data-o="99.4 %">99.0 %</td></tr>
+<tr><td>Exit speed spread (1 sd)</td><td class="lv" data-r="1.83 %" data-o="1.81 %">1.83 %</td><td class="lv" data-r="0.30 %" data-o="0.31 %">0.30 %</td><td class="lv" data-r="1.40 %" data-o="1.31 %">1.40 %</td></tr>
+<tr><td>Up-down spread (1 sd)</td><td class="lv" data-r="0.80 deg" data-o="0.82 deg">0.80 deg</td><td class="lv" data-r="0.67 deg" data-o="0.68 deg">0.67 deg</td><td class="lv" data-r="0.58 deg" data-o="0.61 deg">0.58 deg</td></tr>
+<tr><td>Sideways spread (1 sd)</td><td class="lv" data-r="2.97 deg" data-o="2.89 deg">2.97 deg</td><td class="lv" data-r="0.58 deg" data-o="0.70 deg">0.58 deg</td><td class="lv" data-r="1.64 deg" data-o="1.83 deg">1.64 deg</td></tr>
+<tr><td>Aiming error of its calibration, speed / up-down (rms)</td><td class="lv" data-r="1.67 % / 0.62 deg" data-o="1.58 % / 0.60 deg">1.67 % / 0.62 deg</td><td class="lv" data-r="0.31 % / 0.55 deg" data-o="0.31 % / 0.56 deg">0.31 % / 0.55 deg</td><td class="lv" data-r="0.96 % / 0.56 deg" data-o="0.83 % / 0.47 deg">0.96 % / 0.56 deg</td></tr>
+<tr class="grp"><th colspan="4">Single shots, NECTAR (20 still and 86 moving positions v5 and the passive turret can reach)</th></tr>
+<tr><td>Balls landing, still / moving</td><td class="na">POLLEN only</td><td class="lv" data-r="99.8 % / 99.3 %" data-o="99.7 % / 99.1 %">99.8 % / 99.3 %</td><td>100.0 % / 100.0 %</td></tr>
+<tr><td>Exit speed spread (1 sd)</td><td class="na">POLLEN only</td><td class="lv" data-r="0.27 %" data-o="0.26 %">0.27 %</td><td class="lv" data-r="0.40 %" data-o="0.38 %">0.40 %</td></tr>
+<tr class="grp"><th colspan="4">Bursts of 4</th></tr>
+<tr><td>4 POLLEN, robot code, Meet 1 feed gaps: balls landing (of 160)</td><td class="lv" data-r="151" data-o="154">151</td><td class="lv" data-r="154" data-o="159">154</td><td>149</td></tr>
+<tr><td>Fastest 4 POLLEN with 95 % landing, targets A-C</td><td>0.48 s</td><td class="lv" data-r="0.40 s" data-o="0.28 s">0.40 s</td><td>0.27 s</td></tr>
+<tr><td>Same, all 4 targets (D has a tight speed window)</td><td class="lv" data-r="0.60 s" data-o="0.48 s">0.60 s</td><td class="lv" data-r="not reached" data-o="0.48 s">not reached</td><td class="lv" data-r="0.60 s" data-o="0.48 s">0.60 s</td></tr>
+<tr><td>Mixed POLLEN + NECTAR at the Meet 1 feed gaps: balls landing, time</td><td class="na">POLLEN only</td><td class="lv" data-r="96 % in 1.70 s" data-o="96 % in 1.69 s">96 % in 1.70 s</td><td class="lv" data-r="89 % in 1.49 s" data-o="90 % in 1.64 s">89 % in 1.49 s</td></tr>
+<tr><td>Mixed, fed back to back: balls landing, time (passive at 0.16 s gaps; v5 as fast as its hood allows)</td><td class="na">POLLEN only</td><td class="lv" data-r="81 % in 1.27 s" data-o="81 % in 1.28 s">81 % in 1.27 s</td><td>44 % in 0.49 s</td></tr>
+<tr class="grp"><th colspan="4">Flywheel</th></tr>
+<tr><td>Wheel speed lost per POLLEN</td><td class="">10.3 %</td><td class="">4.0 %</td><td class="">2.9 %</td></tr>
+<tr><td>Wheel speed lost per NECTAR</td><td class="na">POLLEN only</td><td class="">8.7 %</td><td class="">15.4 %</td></tr>
+<tr><td>Back within 2 % after a POLLEN</td><td class="lv" data-r="0.21 s" data-o="0.17 s">0.21 s</td><td class="lv" data-r="0.19 s" data-o="0.14 s">0.19 s</td><td class="lv" data-r="0.12 s" data-o="0.10 s">0.12 s</td></tr>
+<tr><td>Back within 2 % after a NECTAR</td><td class="na">POLLEN only</td><td class="lv" data-r="0.36 s" data-o="0.25 s">0.36 s</td><td class="lv" data-r="0.57 s" data-o="0.47 s">0.57 s</td></tr>
+<tr class="grp"><th colspan="4">Hardware</th></tr>
+<tr><td>Exit-angle reach</td><td class="">about 61-79 deg</td><td class="">about 55-89 deg</td><td class="">about 55-89 deg</td></tr>
+<tr><td>Squeeze on the average POLLEN (72.53 mm, measured)</td><td class="">3.59 mm (CAD)</td><td class="">2.23 mm (CAD)</td><td class="">1.06 mm (sim; the spring sets it)</td></tr>
+<tr><td>Jams in the calibration grid</td><td class="">1 of 389</td><td class="">3 of 699</td><td class="">3 of 699</td></tr>
+<tr><td>Servos</td><td class="">1 (exit angle)</td><td class="">1 (exit angle + ball type)</td><td class="">1 (exit angle)</td></tr>
+<tr><td>Mass (prints at 1.0 g/cm3)</td><td class="">1.27 kg</td><td class="">3.32 kg (2 discs: 3.02)</td><td class="">not modelled</td></tr>
+<tr><td>Status</td><td class="">on the robot today</td><td class="">build pack ready</td><td class="">benchmark only (uses springs)</td></tr>
+</tbody></table></div>
+
+<h2 id="rush">Can the passive turret fire a mixed burst in half a second?</h2>
+<p><b>No, not in any scenario we tested.</b> The case for a passive turret is that nothing moves between balls, so a mixed burst could go through in
+about half a second. We fed 4-ball bursts back to back, at fixed gaps from 0.35 s down to as fast as the entry clears, with one setting for both
+balls. Every scored shot position both balls can reach (103 positions, robot still and moving), all 14 mixed orders, both speed loops:
+17,304 bursts.</p>
+<div class="wrap"><div class="legend"><span class="key"><i class="sw s1"></i>Passive, mixed</span><span class="key"><i class="sw s2"></i>Passive, POLLEN only</span><span class="key"><i class="sw s3"></i>Passive, NECTAR only</span><span class="key"><i class="sw s4 sq"></i>v5, mixed, fastest it can</span></div><svg viewBox="0 0 760 360" role="img" aria-labelledby="rc-t rc-d" class="chart"><title id="rc-t">Balls landing vs burst time</title><desc id="rc-d">Passive turret, balls fed back to back at gaps of 0 to 0.35 s: share of balls landing against the burst time, for mixed orders, POLLEN only and NECTAR only; v5 mixed at its fastest as one point. The table below holds the same numbers.</desc><line x1="56" x2="590" y1="314.0" y2="314.0" class="grid"/><text x="48" y="318.0" class="ax" text-anchor="end">0 %</text><line x1="56" x2="590" y1="255.2" y2="255.2" class="grid"/><text x="48" y="259.2" class="ax" text-anchor="end">20 %</text><line x1="56" x2="590" y1="196.4" y2="196.4" class="grid"/><text x="48" y="200.4" class="ax" text-anchor="end">40 %</text><line x1="56" x2="590" y1="137.6" y2="137.6" class="grid"/><text x="48" y="141.6" class="ax" text-anchor="end">60 %</text><line x1="56" x2="590" y1="78.8" y2="78.8" class="grid"/><text x="48" y="82.8" class="ax" text-anchor="end">80 %</text><line x1="56" x2="590" y1="20.0" y2="20.0" class="grid"/><text x="48" y="24.0" class="ax" text-anchor="end">100 %</text><text x="56.0" y="332" class="ax" text-anchor="middle">0.2 s</text><text x="145.0" y="332" class="ax" text-anchor="middle">0.4 s</text><text x="234.0" y="332" class="ax" text-anchor="middle">0.6 s</text><text x="323.0" y="332" class="ax" text-anchor="middle">0.8 s</text><text x="412.0" y="332" class="ax" text-anchor="middle">1.0 s</text><text x="501.0" y="332" class="ax" text-anchor="middle">1.2 s</text><text x="590.0" y="332" class="ax" text-anchor="middle">1.4 s</text><text x="323" y="354" class="ax" text-anchor="middle">burst time, first ball out to last (median)</text><line x1="56" x2="590" y1="49.4" y2="49.4" class="ref"/><text x="586" y="64.4" class="ax" text-anchor="end">90 % benchmark</text><line x1="189.5" x2="189.5" y1="20" y2="314" class="ref"/><text x="193.5" y="306" class="ax">half a second</text><polyline class="ln s1" points="90.7,193.5 96.5,191.0 135.5,188.7 186.8,185.7 303.8,156.9 436.4,114.3"/><circle class="pt s1" cx="90.7" cy="193.5" r="5"><title>Passive, mixed: 41 % landing, burst 0.28 s (feed gap 0 s)</title></circle><circle class="pt s1" cx="96.5" cy="191.0" r="5"><title>Passive, mixed: 42 % landing, burst 0.29 s (feed gap 0.08 s)</title></circle><circle class="pt s1" cx="135.5" cy="188.7" r="5"><title>Passive, mixed: 43 % landing, burst 0.38 s (feed gap 0.12 s)</title></circle><circle class="pt s1" cx="186.8" cy="185.7" r="5"><title>Passive, mixed: 44 % landing, burst 0.49 s (feed gap 0.16 s)</title></circle><circle class="pt s1" cx="303.8" cy="156.9" r="5"><title>Passive, mixed: 53 % landing, burst 0.76 s (feed gap 0.25 s)</title></circle><circle class="pt s1" cx="436.4" cy="114.3" r="5"><title>Passive, mixed: 68 % landing, burst 1.05 s (feed gap 0.35 s)</title></circle><text x="445.4" y="118.3" class="lab">Passive, mixed</text><polyline class="ln s2" points="79.7,45.0 89.1,46.4 129.2,33.6 180.2,28.6 299.9,25.0 436.5,24.3"/><circle class="pt s2" cx="79.7" cy="45.0" r="5"><title>Passive, POLLEN only: 92 % landing, burst 0.25 s (feed gap 0 s)</title></circle><circle class="pt s2" cx="89.1" cy="46.4" r="5"><title>Passive, POLLEN only: 91 % landing, burst 0.27 s (feed gap 0.08 s)</title></circle><circle class="pt s2" cx="129.2" cy="33.6" r="5"><title>Passive, POLLEN only: 95 % landing, burst 0.36 s (feed gap 0.12 s)</title></circle><circle class="pt s2" cx="180.2" cy="28.6" r="5"><title>Passive, POLLEN only: 97 % landing, burst 0.48 s (feed gap 0.16 s)</title></circle><circle class="pt s2" cx="299.9" cy="25.0" r="5"><title>Passive, POLLEN only: 98 % landing, burst 0.75 s (feed gap 0.25 s)</title></circle><circle class="pt s2" cx="436.5" cy="24.3" r="5"><title>Passive, POLLEN only: 99 % landing, burst 1.06 s (feed gap 0.35 s)</title></circle><text x="445.5" y="28.3" class="lab">Passive, POLLEN only</text><polyline class="ln s3" points="116.9,240.5 118.3,240.5 148.6,240.5 198.8,240.5 310.8,240.5 440.7,224.8"/><circle class="pt s3" cx="116.9" cy="240.5" r="5"><title>Passive, NECTAR only: 25 % landing, burst 0.34 s (feed gap 0 s)</title></circle><circle class="pt s3" cx="118.3" cy="240.5" r="5"><title>Passive, NECTAR only: 25 % landing, burst 0.34 s (feed gap 0.08 s)</title></circle><circle class="pt s3" cx="148.6" cy="240.5" r="5"><title>Passive, NECTAR only: 25 % landing, burst 0.41 s (feed gap 0.12 s)</title></circle><circle class="pt s3" cx="198.8" cy="240.5" r="5"><title>Passive, NECTAR only: 25 % landing, burst 0.52 s (feed gap 0.16 s)</title></circle><circle class="pt s3" cx="310.8" cy="240.5" r="5"><title>Passive, NECTAR only: 25 % landing, burst 0.77 s (feed gap 0.25 s)</title></circle><circle class="pt s3" cx="440.7" cy="224.8" r="5"><title>Passive, NECTAR only: 30 % landing, burst 1.06 s (feed gap 0.35 s)</title></circle><text x="449.7" y="228.8" class="lab">Passive, NECTAR only</text><rect class="pt s4" x="527.0" y="70.6" width="12" height="12" rx="2"><title>v5, mixed, fed as fast as its hood allows: 81 % landing, burst 1.27 s</title></rect><text x="543.0" y="80.6" class="lab">v5, mixed (fastest)</text></svg></div>
+<p class="small">Robot's own loop. Hover a point for its numbers; the table below holds the same data (and switches loop). A ball lands when its exit
+speed and up-down angle are inside that position's window, as for every burst number on this page; adding the sideways window changes these by under 1 point.</p>
+<div class="seg" role="group" aria-label="speed loop"><button data-loop="r" aria-pressed="true">Robot's own loop</button><button data-loop="o" aria-pressed="false">Our improved loop</button></div>
+<div class="wrap"><table class="num"><thead><tr><th>Feed gap</th><th>Burst time</th><th>Mixed: balls landing</th><th>Ball right after a NECTAR</th><th>POLLEN only</th><th>NECTAR only</th><th>Positions where 90 % land (of 103)</th></tr></thead><tbody>
+<tr><td>as fast as the entry clears</td><td>0.28 s</td><td class="lv" data-r="41 %" data-o="42 %">41 %</td><td class="lv" data-r="0 %" data-o="0 %">0 %</td><td class="lv" data-r="92 %" data-o="92 %">92 %</td><td class="lv" data-r="25 %" data-o="25 %">25 %</td><td class="lv" data-r="0" data-o="0">0</td></tr>
+<tr><td>0.08 s</td><td>0.29 s</td><td class="lv" data-r="42 %" data-o="43 %">42 %</td><td class="lv" data-r="0 %" data-o="0 %">0 %</td><td class="lv" data-r="91 %" data-o="94 %">91 %</td><td class="lv" data-r="25 %" data-o="25 %">25 %</td><td class="lv" data-r="0" data-o="0">0</td></tr>
+<tr><td>0.12 s</td><td>0.38 s</td><td class="lv" data-r="43 %" data-o="43 %">43 %</td><td class="lv" data-r="0 %" data-o="0 %">0 %</td><td class="lv" data-r="95 %" data-o="97 %">95 %</td><td class="lv" data-r="25 %" data-o="25 %">25 %</td><td class="lv" data-r="0" data-o="0">0</td></tr>
+<tr><td>0.16 s</td><td>0.49 s</td><td class="lv" data-r="44 %" data-o="44 %">44 %</td><td class="lv" data-r="0 %" data-o="0 %">0 %</td><td class="lv" data-r="97 %" data-o="97 %">97 %</td><td class="lv" data-r="25 %" data-o="25 %">25 %</td><td class="lv" data-r="0" data-o="0">0</td></tr>
+<tr><td>0.25 s</td><td>0.76 s</td><td class="lv" data-r="53 %" data-o="55 %">53 %</td><td class="lv" data-r="2 %" data-o="2 %">2 %</td><td class="lv" data-r="98 %" data-o="99 %">98 %</td><td class="lv" data-r="25 %" data-o="25 %">25 %</td><td class="lv" data-r="0" data-o="0">0</td></tr>
+<tr><td>0.35 s</td><td>1.05 s</td><td class="lv" data-r="68 %" data-o="72 %">68 %</td><td class="lv" data-r="24 %" data-o="33 %">24 %</td><td class="lv" data-r="99 %" data-o="98 %">99 %</td><td class="lv" data-r="30 %" data-o="30 %">30 %</td><td class="lv" data-r="0" data-o="0">0</td></tr>
+<tr class="ref"><td>v5, fastest it can (waits for its hood)</td><td>1.27 s</td><td class="lv" data-r="81 %" data-o="81 %">81 %</td><td class="lv" data-r="63 %" data-o="63 %">63 %</td><td class="na">-</td><td class="na">-</td><td class="lv" data-r="7" data-o="11">7</td></tr>
+</tbody></table>
+<p class="small">Passive at 0.16 s gaps (robot loop), by ball in the burst: 1st 97 %, 2nd 48 %, 3rd 20 %, 4th 9 % landing; median exit speed off -0.1 %, -7.0 %, -10.2 %, -14.6 %. Robot still 42 %, moving 44 %. Best position 50 %, worst 0 %. Adding the sideways window: 43 %.</p></div>
+<p><b>Why:</b> the wheel's stored energy, not the hood. The first ball lands 97 % of the time. Each NECTAR then takes
+15 % off the wheel speed (a POLLEN 3 %), the motor needs about 0.6 s to bring it back within 2 %, and
+every ball fed sooner leaves too slow. One ball type at a time shows the split: POLLEN alone, fed back to back, lands 97 % at 0.16 s gaps
+(a 0.48 s burst), while NECTAR alone lands only its first ball (25 %) at every gap up to 0.25 s.</p>
+<h3>Giving the passive turret its best shot</h3>
+<p>Two design levers set this: a heavier flywheel (less speed lost per ball) and a hood stop that squeezes NECTAR less. Today a NECTAR pushes the hood
+onto its 16.8 mm stop and is squeezed 3.5 mm, against 2.7 mm in v5. Each variant was recalibrated, then given the same
+back-to-back bursts in all 103 positions.</p>
+<div class="wrap"><p class="pend">The design-lever runs (heavier flywheel, opened hood stop) are still running on backhouse.</p></div>
+
+<h2>Details</h2>
+<details><summary>How the comparison is fair</summary><div class="det"><ul>
+<li><b>Same ball feed:</b> every shot starts at a random point in the bore (up to touching its wall) with a random speed of 0.5-2 m/s and up to 10 deg of tilt (ranges guessed), the same draws in the same order for every turret. No transfer model (Ben: it will change).</li>
+<li><b>Same robot code:</b> the speed loop is exactly the Meet 1 TeleOp's (RUN_USING_ENCODER, PIDF 160 / 0 / 0 / 15.2 x 12 / battery volts, setVelocity, no speed check). Our improved loop is the switch.</li>
+<li><b>Same bursts:</b> 4 balls, fed the robot's way (hold Y: transfer and intakes at full power), with the gaps measured from the Meet 1 match logs (47 gaps, median 0.31 s).</li>
+<li><b>Same shots:</b> hits only on the positions every compared turret can reach, so the team turret's high lowest angle (about 61 deg) is not held against it.</li>
+<li><b>Same seeds and the same scoring</b> (the shot study's windows for zones 1-2, robot still and moving up to 0.6 m/s).</li>
+<li>v5 and the passive turret: the bore is continued 100 mm below the ring (the real turret has the 3208 gear bore and the spigot there) and the NECTAR entry disc is 3.6 mm (its real play in the 98 mm ring). The two fastest-POLLEN-burst rows use the first fair run of v5, without the extension.</li></ul></div></details>
+<details><summary>Bursts in detail (team turret and v5)</summary><div class="det"><table class="num"><thead><tr><th>Position (target)</th><th>Team: landing</th><th>v5: landing</th><th>First exit to last, mean (max)</th></tr></thead><tbody>
+<tr><td>A (5.83 m/s, 65 deg)</td><td class="lv" data-r="40 of 40" data-o="40 of 40">40 of 40</td><td class="lv" data-r="40 of 40" data-o="40 of 40">40 of 40</td><td>1.43 s (2.61)</td></tr>
+<tr><td>B (5.48 m/s, 67.5 deg)</td><td class="lv" data-r="39 of 40" data-o="39 of 40">39 of 40</td><td class="lv" data-r="40 of 40" data-o="40 of 40">40 of 40</td><td>1.33 s (2.46)</td></tr>
+<tr><td>C (5.23 m/s, 75 deg)</td><td class="lv" data-r="38 of 40" data-o="39 of 40">38 of 40</td><td class="lv" data-r="40 of 40" data-o="40 of 40">40 of 40</td><td>0.89 s (2.51)</td></tr>
+<tr><td>D (5.45 m/s, 72.5 deg, tight 2.8 % speed window)</td><td class="lv" data-r="34 of 40" data-o="36 of 40">34 of 40</td><td class="lv" data-r="31 of 40" data-o="33 of 40">31 of 40</td><td>1.15 s (1.75)</td></tr>
+</tbody></table><table class="num"><thead><tr><th>Ball in the burst (position A)</th><th>Team: speed off / spread</th><th>v5: speed off / spread</th></tr></thead><tbody>
+<tr><td>1</td><td class="lv" data-r="+0.46 % / 1.19 %" data-o="+0.56 % / 1.23 %">+0.46 % / 1.19 %</td><td class="lv" data-r="-0.07 % / 0.32 %" data-o="+0.04 % / 0.31 %">-0.07 % / 0.32 %</td></tr>
+<tr><td>2</td><td class="lv" data-r="-0.23 % / 1.44 %" data-o="+0.12 % / 1.44 %">-0.23 % / 1.44 %</td><td class="lv" data-r="-0.81 % / 0.78 %" data-o="-0.31 % / 0.51 %">-0.81 % / 0.78 %</td></tr>
+<tr><td>3</td><td class="lv" data-r="-1.00 % / 1.53 %" data-o="-0.34 % / 0.57 %">-1.00 % / 1.53 %</td><td class="lv" data-r="-1.16 % / 1.24 %" data-o="-0.33 % / 0.68 %">-1.16 % / 1.24 %</td></tr>
+<tr><td>4</td><td class="lv" data-r="-0.73 % / 2.04 %" data-o="-0.02 % / 1.68 %">-0.73 % / 2.04 %</td><td class="lv" data-r="-1.16 % / 0.87 %" data-o="-0.07 % / 0.34 %">-1.16 % / 0.87 %</td></tr>
+</tbody></table><p class="small">First exit to last follows the measured feed gaps, so it is the same for both turrets. Position D has a tight speed window.</p></div></details>
+<details><summary>Mixed bursts at the robot feed gaps (v5 and passive, both balls)</summary><div class="det"><table><thead><tr><th>Both balls, same protocol (robot loop / ours)</th><th>v5</th><th>Passive sprung</th><th></th></tr></thead><tbody><tr><td>POLLEN hits, still / moving (n 11 / 43)</td><td>98.8 %, 99.7 % / 98.8 %, 99.6 %</td><td>97.4 %, 99.0 % / 98.1 %, 99.4 %</td><td class="lab">sim</td></tr><tr><td>NECTAR hits, still / moving (n 20 / 86)</td><td>99.8 %, 99.3 % / 99.7 %, 99.1 %</td><td>100.0 %, 100.0 % / 100.0 %, 100.0 %</td><td class="lab">sim</td></tr><tr><td>POLLEN spread: speed, elevation, sideways</td><td>0.30 %, 0.67, 0.58 deg / 0.31 %, 0.68, 0.70 deg</td><td>1.40 %, 0.58, 1.64 deg / 1.31 %, 0.61, 1.83 deg</td><td class="lab">sim</td></tr><tr><td>NECTAR spread: speed, elevation, sideways</td><td>0.27 %, 0.46, 0.16 deg / 0.26 %, 0.49, 0.16 deg</td><td>0.40 %, 0.29, 0.11 deg / 0.38 %, 0.32, 0.15 deg</td><td class="lab">sim</td></tr><tr><td>Wheel dip per ball, POLLEN / NECTAR (true wheel, robot loop; median at HIVE speeds 2200-2800 rpm, all exit angles; the disc study below is one 2500 rpm setting)</td><td>4.0 / 8.7 %</td><td>2.9 / 15.4 %</td><td class='lab'>sim</td></tr><tr><td>Back within 2 % after a NECTAR</td><td>0.36 s / 0.25 s</td><td>0.57 s / 0.47 s</td><td class="lab">sim</td></tr><tr><td>Squeeze, median: POLLEN / NECTAR</td><td>2.31 / 2.67 mm / 2.32 / 2.67 mm</td><td>1.06 / 3.55 mm / 1.07 / 3.56 mm</td><td class="lab">sim</td></tr><tr><td>Jams, spread shots POLLEN / NECTAR (of 450 each, includes 1600 rpm)</td><td>3 / 8 / 3 / 5</td><td>1 / 8 / 2 / 3</td><td class="lab">sim</td></tr><tr><td>Robot-code POLLEN bursts in window (of 160)</td><td>154 / 159</td><td>149 / 149</td><td class="lab">sim</td></tr><tr><td>MIXED 4-ball bursts, 14 orders x 4 positions x 2: balls in window (of 448)</td><td>430 (96.0 %) / 431 (96.2 %)</td><td>399 (89.1 %) / 404 (90.2 %)</td><td class="lab">sim</td></tr><tr><td>Same: POLLEN / NECTAR in window</td><td>100 / 92 % / 100 / 93 %</td><td>99 / 79 % / 100 / 81 %</td><td class="lab">sim</td></tr><tr><td>Same: jams</td><td>0 / 0</td><td>0 / 0</td><td class="lab">sim</td></tr><tr><td>Same: first exit to last, median (p90)</td><td>1.70 (2.65) s / 1.69 (2.62) s</td><td>1.49 (2.54) s / 1.64 (2.61) s</td><td class="lab">sim</td></tr><tr><td>Same: wait for the turret after a ball-type change, median (mean)</td><td>0.31 (0.28) / 0.31 (0.28) s</td><td>0.02 (0.18) / 0.17 (0.25) s</td><td class='lab'>sim</td></tr><tr><td>Same: NECTAR right behind a NECTAR, speed off (median)</td><td>-1.7 / -0.8 %</td><td>-5.7 / -5.2 %</td><td class='lab'>sim</td></tr><tr><td>Passive at ONE shared setting for both balls (no change between balls)</td><td>n/a (v5 must move its hood)</td><td>333 (74.3 %), 1.19 s, 0 jams / 334 (74.6 %)</td><td class="lab">sim</td></tr></tbody></table><p class="small">v5 waits about 0.3 s for its hood after a ball-type change, then almost every ball lands.
+The passive turret barely waits, but a NECTAR right behind a NECTAR leaves about 5.5 % slow and misses: 41-42 of its 44-49 misses are that. With one shared setting the POLLEN right after a NECTAR misses too (74 % land).
+A first run of these showed false jams from a bench bug (a ball fed 1 ms behind a waiting one); fixed and rerun: 0 jams for both.</p></div></details>
+<details><summary>The passive turret: geometry, spring options and the optimum</summary><div class="det"><p><b>Winner: turret v4's one-hood geometry on a sprung slide (the v4p fork).</b> Of the geometries we have, it is the only one where
+the ball itself pushes the hood open while one servo keeps the exit angle. The team's older passive design (3 parallel slots per plate, ~20 mm of
+radial travel) is the same kind of mechanism, but its first draft (variant team_turret) shot POLLEN at 2.6-2.8 m/s with 17-19 % speed spread and
+jammed (sim). v5 cannot be made passive: every v5 hood face and joint turns about the flywheel axle, so a spring there never opens the gap
+(a NECTAR fed into v5 held in POLLEN mode jammed 8 of 8).</p>
+
+<h3>Spring options and the optimum</h3>
+<table><thead><tr><th>Spring option (differential evolution, 24 evaluations x 90 shots, fair entry, robot loop)</th><th>Best parameters</th><th>Score (search)</th><th>Score, fresh seeds</th><th>Hits</th><th>Mixed bursts at one setting</th></tr></thead><tbody>
+<tr><td><b>Near-constant force (default, calibrated)</b></td><td>12.3 N, damping 25 N s/m, stop 16.8 mm</td><td><b>0.898</b></td><td><b>0.876</b></td><td>0.898</td><td>0.899</td></tr>
+<tr><td>Falling two-stage</td><td>27.9 N falling to 7.0 N over 1.26 mm, then +0.48 N/mm; damping 56; stop 18.7</td><td>0.850</td><td>0.840</td><td>0.909</td><td>0.792</td></tr>
+<tr><td>Linear</td><td>21.1 N + 0.92 N/mm, damping 10, stop 16.8</td><td>0.804</td><td>0.833</td><td>0.874</td><td>0.757</td></tr></tbody></table>
+<p>Score = half hits + half the share of mixed-burst balls in the window at ONE shared setting, minus penalties (jams, squeeze outside 1-3 mm
+POLLEN / 1-4 mm NECTAR, peak over 7 mm, slow hood return). Hits in the search use a guessed calibration error (0.35 % / 0.7 deg); the benchmark
+below uses the real calibration. "Fresh seeds" re-measures each optimum on seeds the search never saw: near-constant stays best.
+<b>Why a weak spring wins:</b> both balls then leave at about the same speed from one setting, so mixed bursts need little change between balls.
+The limit is the 1 mm floor of our 1-3 mm POLLEN squeeze target (the optimum sits on it).
+<b>Sensitivity</b> (near-constant, fresh seeds, each parameter moved by 20 % of its range): sharp only in the hold force (5 N: 0.80, 29 N: 0.69);
+flat in damping (13: 0.88, 37: 0.87), stop (16.1 mm: 0.85, 17.4: 0.86) and sprung mass (0.15 kg: 0.89, 0.40: 0.86, 0.54: 0.85). The two-stage
+spring was also sharp in the mass (0.54 kg: 0.62); the near-constant one is not.</p>
+<p><img src="img/passive_phases.png" style="max-width:100%;border-radius:6px" alt="passive turret phases">
+<br><small>The optimum spring at 2500 rpm: POLLEN lifts the hood 2-4 mm; NECTAR pushes it to its 16.8 mm stop and it is back on its seat about 50 ms after the ball leaves.</small></p>
+
+</div></details>
+<details><summary>What causes the team turret's side error</summary><div class="det"><p><b>Mostly a sim bug, now fixed (high confidence).</b> Both turrets use the same tire (Hogback 96, 23.8 vs 24.0 mm wide), and the
+tire gives only about 4 % of the sideways variance (sim). The team turret's sim widens its trough (1.1 x the ball radius) so the rigid sim
+ball does not jam, but the builder missed the hood's last 1.5 deg at the tip: the outer wall cells there stayed on the CAD wall and formed a
+lip up to 10 mm into the widened channel. A leaving ball hit it in 108 of 180 shots and got up to 1.1 m/s sideways in 1.7 ms.
+Fixed (builder flag TIP_FIX), recalibrated, and installed in the testbench; every team number on this page is the fixed one.</p>
+<p><b>The remaining ~3 deg is real in the model (less sure of its size):</b> nothing centres the ball before the squeeze in the team
+turret, so an off-centre or tilted entry carries through to the exit. v5's squishy wheel and ring centre the ball first. Its size depends on
+the guessed entry spread. Carrying the side panels' 75 mm channel down into the bore as two flat walls cut it to 1.7 deg in one quick run.</p>
+<table><thead><tr><th>Sideways velocity spread along the path (sim, 180 shots, same entries)</th><th>Team as first built</th><th>Team fixed</th><th>v5</th></tr></thead><tbody>
+<tr><td>Drawn at entry</td><td>0.087 m/s</td><td>0.087</td><td>0.087</td></tr>
+<tr><td>First tire contact</td><td>0.078</td><td>0.078</td><td>0.040</td></tr>
+<tr><td>Last tire contact</td><td>0.091</td><td>0.091</td><td>0.023</td></tr>
+<tr><td>Exit</td><td><b>0.294</b></td><td><b>0.099</b></td><td><b>0.025</b></td></tr></tbody></table>
+<table><thead><tr><th>One change at a time (sim, sideways velocity spread)</th><th>m/s</th></tr></thead><tbody>
+<tr><td>As first built (with the lip)</td><td>0.268 (9.3 deg)</td></tr>
+<tr><td>Lip fixed</td><td>0.095 (3.0 deg)</td></tr>
+<tr><td>Fixed, ball centred with no tilt</td><td>0.005 (0.1 deg)</td></tr>
+<tr><td>Fixed, side offset only / tilt only</td><td>0.091 / 0.078</td></tr>
+<tr><td>Fixed, no side panels / no fixed lower hood piece</td><td>0.085 / 0.128</td></tr>
+<tr><td>Fixed, trough 1.02 / 1.05 x the ball radius</td><td>0.088 / 0.061 (the exact CAD trough jams the rigid sim ball)</td></tr>
+<tr><td>Fixed, contact cells 2x finer / 2x coarser / deeper / pushed out (sim construction checks)</td><td>0.097 / 0.106 / same / same</td></tr>
+<tr><td><b>Fixed + 75 mm side guides down into the bore</b></td><td><b>0.067 (1.7 deg)</b></td></tr></tbody></table>
+<p><img src="img/side_vx_along_path.png" style="max-width:100%;border-radius:6px" alt="sideways velocity along the path">
+<br><small>Where the sideways spread is gained along the ball's path. The blue jump past +7 deg is the lip at the tip.</small></p>
+<p><img src="img/tip_sections.png" style="max-width:100%;border-radius:6px;background:#fff" alt="tip sections">
+<br><small>Sections at the hood tip: CAD in black, sim cells in cyan, the lip cells that kicked the ball in red.</small></p></div></details>
+<details><summary>v5: side stiffness and 2 vs 4 steel discs</summary><div class="det"><p><b>The axles do not stop the side plates swaying, so each plate now has a printed buttress (built into the pack).</b> Each axle sits in one ball
+bearing per plate, which passes almost no bending, so in sway the axles just move with the plates. The room before parts touch sideways is
+only about 0.3 mm (the NECTAR tooth's edge on its support, the POLLEN side teeth inside the fixed NECTAR teeth), not the 0.75 mm first quoted.
+A cross tie between the plates has nowhere to go (hood, ball path, squishy, motor and servo fill the space) and would sway with them anyway,
+so each plate is tied to the base piece instead: a printed buttress, part of the base piece, with 2 x M4 x 30 per plate. No new parts;
+base piece +57 g and +1.6 h of printing. All locked-geometry checks pass.</p>
+<table><thead><tr><th>Side stiffness (derived, beam model)</th><th>N/mm</th><th>Sway at 1 g (22 N)</th></tr></thead><tbody>
+<tr><td>Before: plates alone, axles as pins</td><td>23.8</td><td>0.93 mm (room 0.3 mm)</td></tr>
+<tr><td>Before, axles clamped rigid (upper bound no bearing reaches)</td><td>126.9</td><td>0.17 mm</td></tr>
+<tr><td><b>After: buttresses, axles as pins</b></td><td><b>121.1</b></td><td><b>0.18 mm</b></td></tr></tbody></table>
+<p><b>Two steel discs work in the sim:</b> spin-up drops about 45 % and the turret loses 304 g; bursts, spreads and hits are the same or
+slightly better. The cost is a 65-70 % deeper dip per ball, so anything on the real robot that varies the dip (ball wear, the squishy's grip)
+matters more. Same shaft and spacers; one disc per side.</p>
+<table><thead><tr><th>v5, sim, robot loop / ours</th><th>4 discs</th><th>2 discs</th></tr></thead><tbody>
+<tr><td>Flywheel inertia (derived)</td><td>7.71e-4 kg m2</td><td>4.41e-4 (-43 %)</td></tr>
+<tr><td>Spin-up from rest to 2500 rpm (within 1 %)</td><td>3.00 / 2.38 s</td><td><b>1.68 / 1.37 s</b></td></tr>
+<tr><td>Spin-up from rest to 3500 rpm</td><td>4.34 / 4.19 s</td><td><b>2.48 / 2.42 s</b></td></tr>
+<tr><td>POLLEN dip per ball</td><td>4.0 %</td><td>6.7 %</td></tr>
+<tr><td>POLLEN back within 2 % / 0.5 %</td><td>0.19 / 0.14 s; 0.47 / 0.30 s</td><td>0.17 / 0.13 s; 0.33 / 0.19 s</td></tr>
+<tr><td>NECTAR dip at 2500 rpm, back within 0.5 %</td><td>6.2 %, 0.57 / 0.25 s</td><td>10.2 %, 0.38 / 0.23 s</td></tr>
+<tr><td>4-ball POLLEN bursts (robot code, Meet 1 gaps), balls in window</td><td>151 / 153 of 160</td><td>158 / 150 of 160</td></tr>
+<tr><td>Speed drift over a 4-ball burst</td><td>robot 0 to -1.4 %, ours within 0.4 %</td><td>robot 0 to -0.9 %, ours within 0.3 %</td></tr>
+<tr><td>Mixed 4-ball bursts (14 orders x 2), first exit to last</td><td>1.37 / 1.43 s</td><td>1.32 / 1.40 s</td></tr>
+<tr><td>Spread at HIVE speeds (speed / elevation / sideways)</td><td>0.29 % / 0.61 / 0.61 deg</td><td>0.30 % / 0.60 / 0.53 deg</td></tr>
+<tr><td>Hits on common states, still / moving</td><td>98.2 / 99.3 %</td><td>98.3 / 99.4 %</td></tr></tbody></table>
+<p><small>The mixed-burst runs used 2 bursts per order and quicker calibrations (2 shots a point). One 4-disc cell (99 of 112) was a fixed -1.2 deg NECTAR
+calibration bias at that target, not burst behaviour. Source: out/turret_cad/v5/build_pack/disc/disc_report.json, sway/.</small></p></div></details>
+<details><summary>Sim vs the real robot (team turret)</summary><div class="det"><table class="num"><thead><tr><th></th><th>Robot (measured)</th><th>Sim</th></tr></thead><tbody>
+<tr><td>Exit at 2500 rpm, hood on its stop (servo 0.88)</td><td>5.445 m/s, 62.30 deg (2 shots)</td><td>5.344 m/s, 62.95 deg</td></tr>
+<tr><td>Wheel speed lost per ball</td><td>7-18 %, median 9.1 % (39 balls)</td><td>8.8 % (hub reading)</td></tr>
+<tr><td>Back within 2 %</td><td>0.29-0.33 s (under an older loop)</td><td>0.22 s</td></tr>
+<tr><td>Exit degrees per hood-servo unit</td><td>121 (fit to the team's hand-tuned table)</td><td>137 (servo travel guessed)</td></tr></tbody></table>
+<p class="small">These sim numbers are from the first build, before the tip-lip fix; the fixed turret exits about 2.2 % faster and 1.4 deg flatter (sim), so the 2500 rpm check moves to roughly 5.46 m/s and 61.5 deg (derived, not rerun).</p></div></details>
+
+<h2 id="build">v5 build pack</h2>
+<p><a href="../build/">Open the build pack</a>. Day 1: cut 11 plates (1/4 in) and start 6 prints (27.9 h on one printer, about 13 h on four; the base piece is the longest).
+v5 bolts into 6 of the 8 gear holes the team's deck uses, and a printed sleeve brings the bore down to where the transfer delivers balls today. To order:
+10 x 6801-2RS bearings (needed on day 2), 2 x HTD 3M 444 mm belts, optionally the aluminium 25T pulley (a printed one is sliced). About $55-90 (guessed).</p>
+
+<h2>Not verified</h2>
+<ul>
+<li>Everything except the Meet 1 feed gaps and the team turret's anchor shots is sim (see the note at the top). <b>The team turret's real sideways spread has never been measured</b>; about 20 shots at one setting at a wall would settle it.</li>
+<li>The ball feed ranges (speed, tilt, start point) are guesses.</li>
+<li>The team turret's trough is opened to 1.1 x the ball radius in the sim (the CAD is 0.27 mm tighter than the ball and the rigid sim ball jams).</li>
+<li>The hood servo's travel per unit is guessed (270 deg). The flywheel's fitted inertia is 3.5 x what the team turret's CAD parts give; not explained.</li>
+<li>The passive turret is contact geometry only: its sprung mass (0.25 kg) is a guess, its slide has no friction in the sim, and why its NECTAR costs the wheel so much more than v5's is only partly traced (a bigger squeeze on its stop).</li>
+<li>The heavier-flywheel variants scale the wheel's inertia only; the motor, belt and loop gains are unchanged, and the disc count is derived from the 2 vs 4 disc inertias.</li>
+<li>Side stiffness is a beam model with guessed printed-PETG stiffness. 2 discs vs 4 is sim only, on the 11-09 motor fit.</li>
+</ul>
+<details><summary>Sources</summary><div class="det"><ul class="small">
+<li>Fair comparison (team, v5): out/turret_cad/team_pollen_turret/sim/side/runs/fx_fair_report.json, sim/side/NOTES.md</li>
+<li>Passive turret and v5 under the same protocol: out/turret_cad/passive/final/report.json, out/turret_cad/passive/NOTES.md</li>
+<li>Rush bursts: tools/passive_bench.mjs rush, tools/rush_states.py, tools/rush_report.py; out/turret_cad/passive/final/rush_report.json, design_report.json</li>
+<li>Fastest bursts: tools/gap_bursts.mjs, tools/gap_table.py. v5 build pack: out/turret_cad/v5/build_pack/ (PROGRESS.md)</li></ul></div></details>
+</main><script>
+(function(){
+  var KEY='cmp-loop', cur='r';
+  try{ var s=localStorage.getItem(KEY); if(s==='o'||s==='r') cur=s; }catch(e){}
+  function apply(v){ cur=v;
+    document.querySelectorAll('td.lv').forEach(function(td){ td.textContent=td.getAttribute(v==='o'?'data-o':'data-r'); });
+    document.querySelectorAll('.seg button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.loop===v?'true':'false'); });
+    document.querySelectorAll('.loopname').forEach(function(x){ x.textContent = v==='o' ? 'our improved loop' : "the robot's own loop (Meet 1 code)"; });
+    try{ localStorage.setItem(KEY,v); }catch(e){}
+  }
+  document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ apply(b.dataset.loop); }); });
+  apply(cur);
+})();
+</script></body></html>

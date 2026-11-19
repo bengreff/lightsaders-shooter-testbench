@@ -15,7 +15,7 @@ self.onmessage = async (ev) => {
     const mj = await loadMujoco();
     const v = await fetchVariant(base);
     const sim = new Sim(mj).loadScene(v.xml, v.files);
-    const B = new Shooter(sim, v.manifest, { jitter: true, seed: settings.seed ?? 100 });
+    const B = new Shooter(sim, v.manifest, { jitter: true, seed: settings.seed ?? 100, loop: settings.loop, entry: settings.entry, spring: settings.spring });   // the page's flywheel loop / entry / spring
     if (settings.feeder_u != null) B.feeder_u = settings.feeder_u;
     const sq = settings.squeeze || {};
     const setBall = B.setBall.bind(B);
