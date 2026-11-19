@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Turret Comparison</title><style>
+<title>BIOBUZZ Turrets</title><style>
 :root{--bg:#fbfbfc;--fg:#1c1f24;--mute:#5d646d;--line:#dfe2e6;--card:#f1f3f5;--acc:#1f6fb2;--onacc:#ffffff;--warnbg:#fff6e0;--warn:#8a5a00;
  --s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--grid:#e6e8eb}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#14161a;--fg:#e6e8eb;--mute:#9aa1aa;--line:#2b2f36;--card:#1b1e23;--acc:#7cc4ff;--onacc:#0b0d10;
@@ -26,11 +26,12 @@ img{max-width:100%;border-radius:6px} ul{padding-left:20px} li{margin:3px 0}
 .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mute);margin:6px 0} .key{display:inline-flex;align-items:center;gap:6px}
 .sw{display:inline-block;width:14px;height:3px;border-radius:2px} .sw.sq{width:10px;height:10px} .sw.s1{background:var(--s1)} .sw.s2{background:var(--s2)} .sw.s3{background:var(--s3)} .sw.s4{background:var(--s4)}
 @media (max-width:640px){table{font-size:13px} th,td{padding:6px}}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0} .card{border:1px solid var(--line);border-top:4px solid var(--s1);border-radius:8px;padding:12px 14px} .card.pas{border-top-color:var(--s2)} .card .tag{font-size:12px;letter-spacing:.06em;color:var(--mute);font-weight:600;margin-bottom:8px} .pics{display:flex;gap:8px} .pics figure{margin:0;flex:1} .pics img{width:100%;max-height:300px;object-fit:contain} figcaption{font-size:12px;color:var(--mute)} @media (max-width:720px){.cards{grid-template-columns:1fr}}
 </style></head><body><main>
-<h1>Turret comparison</h1>
-<div class="sub">FTC team 12928 Lightsaders, BIOBUZZ 2026-27. Updated 2026-11-19. The team's turret on the robot today, our v5 design, and a sprung passive turret built as a benchmark.</div>
+<h1>Turrets for BIOBUZZ</h1>
+<div class="sub">FTC team 12928 Lightsaders, BIOBUZZ 2026-27. Updated 2026-11-19. Active or passive hood, what other teams have done, and how three turrets compare: the team's turret on the robot today, our v5 design, and a sprung passive turret built as a benchmark.</div>
 <div class="links"><a href="../?variant=team_pollen">Testbench: team turret</a><a href="../?variant=onehood_v5m">Testbench: v5 active</a><a href="../?variant=passive_sprung">Testbench: passive sprung</a>
-<a href="../build/">v5 build pack</a><a href="Active_or_Passive_Hood.pdf">Active or passive guide (PDF)</a></div>
+<a href="../build/">v5 build pack</a><a href="#concept">Active or passive?</a></div>
 
 <div class="warnbox"><b>Simulator numbers: a best case.</b> Every consistency and hit number on this page comes from the testbench simulator, an ideal
 environment. Each part is exactly its CAD shape, nothing wears or loosens, and the sim does not count measurement error or hardware precision
@@ -47,7 +48,49 @@ A flywheel with twice or four times the inertia, or a hood stop opened to squeez
 At the robot's real feed gaps v5 lands 96 % of mixed balls and the passive turret 89-90 %.</p>
 <p>The team turret is lighter (1.27 vs 3.32 kg) and on the robot today. v5 can be built from tomorrow (build pack linked).</p></div>
 
-<h2>At a glance</h2>
+
+<h2 id="concept">Active or passive hood?</h2>
+<p>A flywheel shooter squeezes the ball between a spinning wheel and a curved hood; that squeeze sets how much speed and spin the ball
+takes. BIOBUZZ has two balls of different size (POLLEN about 72.5 mm measured, NECTAR about 90 mm), so one fixed gap cannot squeeze both
+the same. There are two ways to solve it:</p>
+<div class="cards">
+<div class="card act"><div class="tag">ACTIVE: the robot sets the gap</div><div class="pics"><figure><img src="img/v5_pollen.png" alt="v5 in POLLEN mode"><figcaption>v5, POLLEN mode</figcaption></figure>
+<figure><img src="img/v5_nectar.png" alt="v5 in NECTAR mode"><figcaption>v5, NECTAR mode: the POLLEN hood swung over</figcaption></figure></div>
+<ul><li>A servo or mechanism moves the hood to the right gap for each ball type.</li><li>The hood is held rigid while the ball goes through.</li>
+<li>Something has to move between ball types (v5: one servo, about 0.3 s).</li><li>More moving parts (v5: three hood pieces, a latch and a pin).</li></ul></div>
+<div class="card pas"><div class="tag">PASSIVE: the ball sets the gap</div><div class="pics"><figure><img src="img/v4p_full.png" alt="passive sprung hood model"><figcaption>Our passive model (v4 geometry): hood on sprung slides</figcaption></figure></div>
+<ul><li>The hood rides on a spring; a bigger ball pushes it open by itself.</li><li>Nothing to command or switch between balls; a servo only sets the exit angle.</li>
+<li>Fewer parts: one sliding hood and its spring.</li><li>The hood moves during the shot, so it adds shot-to-shot spread and takes energy from the wheel.</li></ul></div>
+</div>
+<div class="wrap"><table><thead><tr><th></th><th>Active</th><th>Passive</th></tr></thead><tbody>
+<tr><td>Consistency shot to shot</td><td>best: the gap is rigid</td><td>worse: the hood moves with every ball (REV and FRC 254 both warn about compliance)</td></tr>
+<tr><td>Changing ball type</td><td>has to switch (v5 about 0.3 s)</td><td>instant</td></tr>
+<tr><td>Ball size variation (worn or odd balls)</td><td>a bigger ball gets squeezed more</td><td>the spring takes it up</td></tr>
+<tr><td>Fast mixed bursts</td><td>limited by the switch</td><td>the promise; in our sim it fails, because a NECTAR drains the wheel (see below)</td></tr>
+<tr><td>Build effort</td><td>more parts, a mechanism to get right</td><td>simpler, but the spring has to be tuned</td></tr>
+<tr><td>If it goes wrong</td><td>locked in POLLEN mode it is still a fixed POLLEN shooter</td><td>a spring that is too weak or too strong ruins one of the two balls</td></tr>
+</tbody></table></div>
+<h3>What other teams have published</h3>
+<ul><li>No BIOBUZZ team had posted test numbers for a shooter of either kind that handles both balls (checked 2026-11-17).</li>
+<li><a href="https://www.chiefdelphi.com/t/ftc-14343-escape-velocity-biobuzz-build-thread/524080">FTC 14343</a> plans a passive sprung hood, with an active hood as their fallback.</li>
+<li><a href="https://www.chiefdelphi.com/t/12737-2026-2027-season-build-thread-biobuzz/524059">FTC 12737</a> fires both balls from one shooter and reports that one ball "sometimes goes much higher or lower" than the other.</li>
+<li><a href="https://docs.revrobotics.com/ftc-kickoff-concepts/ultimate-goal-2020-2021/shooter">REV's shooter guide</a> warns that compliance in a shooter tends to make shots inconsistent.</li>
+<li><a href="https://media.team254.com/resources/Team_254_Tech_Binder_2014.pdf">FRC 254 (2014)</a> locked its hood so a ball could not push it open, because that gave inaccurate shots.</li>
+<li>In the last FTC season (DECODE), published robots mostly moved from fixed shooters to turrets with an adjustable hood, to shoot from anywhere on the field.</li></ul>
+<h3>What the active turret costs</h3>
+<ul><li><b>Switching time:</b> about 0.3 s to change ball type (sim). If a match plan alternates POLLEN and NECTAR faster than that, the passive hood would win those moments, if it could stay accurate.</li>
+<li><b>More moving parts, same servo count:</b> three hood pieces, a latch and a pin, against one sliding hood with a spring.</li>
+<li><b>Weight:</b> about 3.3 kg as drawn (prints counted at 1.0 g/cm3), against 1.27 kg for the team turret.</li>
+<li><b>Servo load:</b> the servo takes a short load spike each time it picks up a hood piece; goBILDA's gear strength there is not known.</li>
+<li><b>A safe fallback:</b> locked in POLLEN mode it is a fixed POLLEN shooter, no worse than today's turret, and it can be built in stages.</li></ul>
+<h3>Settle it with one real test</h3>
+<ol><li>Agree the rule first: the design with the tighter real spread of exit speed and angle wins.</li>
+<li>On the current robot, shoot 20 balls with the hood held rigid and 20 with it on a spring, at the same wheel speed.</li>
+<li>Measure every shot's exit speed and angle with the ShotCam app.</li>
+<li>Compare with the sim, which predicts a clearly larger speed spread for the sprung hood.</li>
+<li>Decide, then build in stages so nothing is lost if it changes later.</li></ol>
+
+<h2 id="glance">At a glance</h2>
 <p class="small">All numbers sim. Showing <span class="loopname">the robot's own loop (Meet 1 code)</span>. Same random ball feed, same seeds and the
 same scoring for every turret; hits only on shots every compared turret can reach.</p>
 <div class="seg" role="group" aria-label="speed loop"><button data-loop="r" aria-pressed="true">Robot's own loop</button><button data-loop="o" aria-pressed="false">Our improved loop</button></div>
